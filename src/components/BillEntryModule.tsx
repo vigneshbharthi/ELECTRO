@@ -43,15 +43,18 @@ export const BillEntryModule: React.FC<BillEntryModuleProps> = ({
       electrician_id: elec.id,
       electrician_name: elec.name,
       date: new Date().toISOString(),
-      particular: `Bill #${billNo} Value: ₹${billAmount.toLocaleString('en-IN')} (${calculatedPoints} Pts Earned)`,
+      particular: `Bill #${billNo} Value: ₹${numericAmount.toLocaleString('en-IN')} (${calculatedPoints} Pts Earned)`,
       debit_points: 0,
       credit_points: calculatedPoints
     });
 
     setIsSubmitting(false);
     alert(`Successfully processed Bill #${billNo}! Credited ${calculatedPoints} points to ${elec.name}.`);
-    // Reset Bill No
+    // Reset all entry fields after successful submission
     setBillNo(`INV-${Math.floor(100000 + Math.random() * 900000)}`);
+    setBillAmount('');
+    setSelectedProductIds([]);
+    setRemarks('');
   };
 
   const toggleProductSelection = (pId: string) => {

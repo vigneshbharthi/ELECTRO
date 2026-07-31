@@ -100,6 +100,11 @@ ALTER TABLE public.point_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.redemptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.electrician_claims ENABLE ROW LEVEL SECURITY;
 
+-- CREATE INDEXES ON FOREIGN KEYS FOR QUERY PERFORMANCE
+CREATE INDEX IF NOT EXISTS idx_point_transactions_electrician_id ON public.point_transactions(electrician_id);
+CREATE INDEX IF NOT EXISTS idx_redemptions_electrician_id ON public.redemptions(electrician_id);
+CREATE INDEX IF NOT EXISTS idx_electrician_claims_electrician_id ON public.electrician_claims(electrician_id);
+
 -- CREATE RLS POLICIES FOR FULL APP ACCESS
 CREATE POLICY "Allow all access to electricians" ON public.electricians FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access to order_men" ON public.order_men FOR ALL USING (true) WITH CHECK (true);

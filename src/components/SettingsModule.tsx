@@ -109,7 +109,7 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
               <span className="text-slate-400 block text-[11px]">Database Connection:</span>
               <span className="text-emerald-400 font-mono font-bold text-xs flex items-center gap-1 mt-0.5">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                Supabase Connected (optvzsdieukdqsrcxdzm.supabase.co)
+                import.meta.env.VITE_SUPABASE_URL ? `Supabase Connected (${import.meta.env.VITE_SUPABASE_URL})` : 'Supabase (not configured)'
               </span>
             </div>
           </div>

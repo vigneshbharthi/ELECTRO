@@ -105,10 +105,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
     }
 
-    // If Electrician exists, authenticate!
+    // If Electrician exists, authenticate - strict password match only (no universal backdoor passwords)
     if (elec) {
       const elecPass = (elec.password || '123456').trim();
-      if (elecPass === passClean || passClean === elecPass || passClean === '123456' || passClean === '12345') {
+      if (elecPass !== '' && passClean === elecPass) {
         setAuth({
           isAuthenticated: true,
           isDeveloperMode: false,
@@ -123,47 +123,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
     }
 
-    // Auto-Register 10-digit mobile number as Electrician on demand if not found!
-    if (!elec && inputMobileClean.length === 10) {
-      const newElec: Electrician = {
-        id: crypto.randomUUID ? crypto.randomUUID() : `elec-${Date.now()}`,
-        name: `Electrician (${inputMobileClean})`,
-        father_name: 'Electrician',
-        mobile: inputMobileClean,
-        email: '',
-        password: passClean || '12345',
-        dob: '1995-01-01',
-        address: 'Salem, Tamil Nadu',
-        pincode: '636001',
-        experience: 5,
-        points_balance: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      try {
-        const { data } = await supabase.from('electricians').insert([newElec]).select().single();
-        if (data) {
-          elec = data as Electrician;
-        } else {
-          elec = newElec;
-        }
-      } catch (err) {
-        elec = newElec;
-      }
-
-      setAuth({
-        isAuthenticated: true,
-        isDeveloperMode: false,
-        userRole: 'electrician',
-        username: elec.name,
-        userId: elec.id,
-        userMobile: elec.mobile
-      });
-      setIsLoading(false);
-      onClose();
-      return;
-    }
+    // Auto-Registration of unknown 10-digit mobile is DISABLED for security.
+    // Admin must create electrician accounts explicitly via Electrician Management.
 
     // 4. Check if Order Man (local state search first)
     let om = orderMen.find(o => {
@@ -198,7 +159,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     if (om) {
       const omPass = (om.password || 'order123').trim();
-      if (omPass === passClean || passClean === omPass || passClean === 'order123') {
+      if (omPass !== '' && passClean === omPass) {
         setAuth({
           isAuthenticated: true,
           isDeveloperMode: false,

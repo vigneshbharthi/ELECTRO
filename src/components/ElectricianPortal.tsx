@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Award, FileSpreadsheet, Upload, Plus, CheckCircle2, Clock, Image, ArrowUpRight, ArrowDownLeft, Wallet, User, Edit, Trash2, X, AlertTriangle } from 'lucide-react';
-import { Electrician, PointTransaction, ElectricianClaim } from '../types';
+import { Electrician, PointTransaction, ElectricianClaim, AppSettings } from '../types';
 
 interface ElectricianPortalProps {
   electrician: Electrician;
   transactions: PointTransaction[];
   claims: ElectricianClaim[];
+  settings: AppSettings;
   onSubmitClaim: (claim: Omit<ElectricianClaim, 'id' | 'status' | 'submitted_date'>) => Promise<void>;
   onUpdateClaim?: (id: string, updates: Partial<ElectricianClaim>) => Promise<void>;
   onDeleteClaim?: (id: string) => Promise<void>;
@@ -15,6 +16,7 @@ export const ElectricianPortal: React.FC<ElectricianPortalProps> = ({
   electrician,
   transactions,
   claims,
+  settings,
   onSubmitClaim,
   onUpdateClaim,
   onDeleteClaim
@@ -95,7 +97,7 @@ export const ElectricianPortal: React.FC<ElectricianPortalProps> = ({
     }
 
     setIsSubmitting(true);
-    const claimedPts = Math.floor(numericAmount * 0.01);
+    const claimedPts = Math.floor(numericAmount * settings.pointsPerRupee);
 
     await onSubmitClaim({
       electrician_id: electrician.id,
@@ -123,7 +125,7 @@ export const ElectricianPortal: React.FC<ElectricianPortalProps> = ({
       return;
     }
 
-    const claimedPts = Math.floor(numericAmount * 0.01);
+    const claimedPts = Math.floor(numericAmount * settings.pointsPerRupee);
 
     await onUpdateClaim(editingClaim.id, {
       bill_no: editBillNo,
@@ -384,7 +386,7 @@ export const ElectricianPortal: React.FC<ElectricianPortalProps> = ({
                 />
                 {Number(billAmount) > 0 && (
                   <p className="text-[11px] text-amber-400 mt-1 font-mono">
-                    Estimated Points Claimable: +{Math.floor(Number(billAmount) * 0.01)} Points
+                    Estimated Points Claimable: +{Math.floor(Number(billAmount) * settings.pointsPerRupee)} Points
                   </p>
                 )}
               </div>

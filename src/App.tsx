@@ -21,11 +21,21 @@ export function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
 
   // App Settings & Company Profile
-  const [settings, setSettings] = useState<AppSettings>({
-    pointsPerRupee: 0.01, // Default: 1 Point for every ₹100 bill
-    minBillAmount: 100,
-    appName: 'ELECTRO'
-  });
+  const getInitialSettings = (): AppSettings => {
+    try {
+      const stored = localStorage.getItem('electro_app_settings');
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return { pointsPerRupee: 0.01, minBillAmount: 100, appName: 'ELECTRO' };
+  };
+  const [settings, setSettings] = useState<AppSettings>(getInitialSettings);
+
+  // Persist settings to localStorage on every change
+  useEffect(() => {
+    try {
+      localStorage.setItem('electro_app_settings', JSON.stringify(settings));
+    } catch {}
+  }, [settings]);
 
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile>(() => dataService.getCompanyProfile());
 
@@ -146,13 +156,21 @@ export function App() {
   };
 
   const handleUpdateRedemptionStatus = async (id: string, status: 'approved' | 'rejected', remarks?: string) => {
-    await dataService.updateRedemptionStatus(id, status, remarks);
-    await loadData();
+    try {
+      await dataService.updateRedemptionStatus(id, status, remarks);
+      await loadData();
+    } catch (e: any) {
+      alert(e?.message || 'Failed to update redemption status.');
+    }
   };
 
   const handleUpdateClaimStatus = async (id: string, status: 'approved' | 'rejected', remarks?: string) => {
-    await dataService.updateClaimStatus(id, status, remarks);
-    await loadData();
+    try {
+      await dataService.updateClaimStatus(id, status, remarks);
+      await loadData();
+    } catch (e: any) {
+      alert(e?.message || 'Failed to update claim status.');
+    }
   };
 
   const handleSubmitClaim = async (claim: Omit<ElectricianClaim, 'id' | 'status' | 'submitted_date'>) => {
@@ -161,8 +179,12 @@ export function App() {
   };
 
   const handleUpdateClaim = async (id: string, updates: Partial<ElectricianClaim>) => {
-    await dataService.updateClaim(id, updates);
-    await loadData();
+    try {
+      await dataService.updateClaim(id, updates);
+      await loadData();
+    } catch (e: any) {
+      alert(e?.message || 'Failed to update claim.');
+    }
   };
 
   const handleDeleteClaim = async (id: string) => {
@@ -217,6 +239,7 @@ export function App() {
                 electrician={currentElectrician}
                 transactions={transactions}
                 claims={claims}
+                settings={settings}
                 onSubmitClaim={handleSubmitClaim}
                 onUpdateClaim={handleUpdateClaim}
                 onDeleteClaim={handleDeleteClaim}
@@ -273,6 +296,7 @@ export function App() {
                   <ElectricianClaimsApproval
                     electricians={electricians}
                     claims={claims}
+                    settings={settings}
                     onUpdateClaimStatus={handleUpdateClaimStatus}
                     onSubmitClaim={handleSubmitClaim}
                   />

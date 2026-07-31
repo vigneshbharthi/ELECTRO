@@ -55,7 +55,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
 
             <button
-              onClick={() => onNavigate('ledger')}
+              onClick={() => onNavigate('ledger_report')}
               className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 text-xs font-bold transition-all"
             >
               <FileSpreadsheet className="w-4 h-4 text-teal-400" />
@@ -101,7 +101,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         <div
-          onClick={() => onNavigate('ledger')}
+          onClick={() => onNavigate('ledger_report')}
           className="glass-panel glass-panel-hover p-5 rounded-2xl cursor-pointer"
         >
           <div className="flex items-center justify-between">
@@ -117,7 +117,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         <div
-          onClick={() => onNavigate('redemption')}
+          onClick={() => onNavigate('redemption_entry')}
           className="glass-panel glass-panel-hover p-5 rounded-2xl cursor-pointer"
         >
           <div className="flex items-center justify-between">
@@ -143,7 +143,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               Recent Ledger Transactions
             </h3>
             <button
-              onClick={() => onNavigate('ledger')}
+              onClick={() => onNavigate('ledger_report')}
               className="text-xs text-teal-400 hover:text-teal-300 font-semibold flex items-center gap-1"
             >
               <span>View Full Ledger</span>

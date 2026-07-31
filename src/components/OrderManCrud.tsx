@@ -26,7 +26,7 @@ export const OrderManCrud: React.FC<OrderManCrudProps> = ({
     mobile: '',
     email: '',
     password: '',
-    region: 'Salem Zone',
+    region: 'Salem & Namakkal Zone',
     status: 'active' as 'active' | 'inactive'
   });
 
@@ -159,7 +159,7 @@ export const OrderManCrud: React.FC<OrderManCrudProps> = ({
 
                 <div className="flex items-center gap-2">
                   <Key className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                  <span className="font-mono text-slate-400 text-[11px]">Password: {om.password || '******'}</span>
+                  <span className="font-mono text-slate-400 text-[11px]">Password: ********</span>
                 </div>
               </div>
             </div>

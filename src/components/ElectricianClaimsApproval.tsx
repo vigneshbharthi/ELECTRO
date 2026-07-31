@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { ShieldCheck, CheckCircle2, XCircle, Clock, Award, FileText, UserCheck, Plus, Sparkles, Image, Eye, X, Upload } from 'lucide-react';
-import { Electrician, ElectricianClaim } from '../types';
+import { Electrician, ElectricianClaim, AppSettings } from '../types';
 
 interface ElectricianClaimsApprovalProps {
   electricians: Electrician[];
   claims: ElectricianClaim[];
+  settings: AppSettings;
   onUpdateClaimStatus: (id: string, status: 'approved' | 'rejected', remarks?: string) => Promise<void>;
   onSubmitClaim: (claim: Omit<ElectricianClaim, 'id' | 'status' | 'submitted_date'>) => Promise<void>;
 }
@@ -12,6 +13,7 @@ interface ElectricianClaimsApprovalProps {
 export const ElectricianClaimsApproval: React.FC<ElectricianClaimsApprovalProps> = ({
   electricians,
   claims,
+  settings,
   onUpdateClaimStatus,
   onSubmitClaim
 }) => {
@@ -72,7 +74,7 @@ export const ElectricianClaimsApproval: React.FC<ElectricianClaimsApprovalProps>
       return;
     }
 
-    const claimedPts = Math.floor(numericAmount * 0.01);
+    const claimedPts = Math.floor(numericAmount * settings.pointsPerRupee);
 
     await onSubmitClaim({
       electrician_id: elec.id,

@@ -254,12 +254,12 @@ export const dataService = {
       created_at: new Date().toISOString()
     };
 
-    // Update electrician balance
+    // Update electrician balance (no floor - keep ledger & balance in sync honestly)
     const electricians = await this.getElectricians();
     const electrician = electricians.find(e => e.id === tx.electrician_id);
     if (electrician) {
       const pointDiff = (tx.credit_points || 0) - (tx.debit_points || 0);
-      const newBalance = Math.max(0, electrician.points_balance + pointDiff);
+      const newBalance = electrician.points_balance + pointDiff;
       await this.updateElectrician(electrician.id, { points_balance: newBalance });
       newTx.electrician_name = electrician.name;
     }
@@ -323,7 +323,16 @@ export const dataService = {
     const red = redemptions.find(r => r.id === id);
 
     if (red && red.status === 'pending' && status === 'approved') {
-      // Create ledger debit transaction
+      // Prevent approving redemption that exceeds electrician's current balance
+      const electricians = await this.getElectricians();
+      const elec = electricians.find(e => e.id === red.electrician_id);
+      if (!elec) {
+        throw new Error('Linked electrician not found for this redemption.');
+      }
+      if (elec.points_balance < red.points) {
+        throw new Error(`Insufficient balance. ${elec.name} has only ${elec.points_balance} points, but redemption requests ${red.points} points.`);
+      }
+      // Create ledger debit transaction (this also debits the balance)
       await this.addTransaction({
         electrician_id: red.electrician_id,
         electrician_name: red.electrician_name,
@@ -463,8 +472,17 @@ export const dataService = {
   },
 
   async updateClaim(id: string, updates: Partial<any>): Promise<any> {
+    // Only pending claims may be edited - guard against tampering with already-reviewed claims
+    const existing = (await this.getClaims()).find(c => c.id === id);
+    if (existing && existing.status !== 'pending') {
+      throw new Error(`Cannot edit a claim that is already ${existing.status}.`);
+    }
+    // Never allow status mutation through this generic update path (use updateClaimStatus)
+    const safeUpdates = { ...updates };
+    delete safeUpdates.status;
+    delete safeUpdates.processed_date;
     try {
-      const { data, error } = await supabase.from('electrician_claims').update(updates).eq('id', id).select().single();
+      const { data, error } = await supabase.from('electrician_claims').update(safeUpdates).eq('id', id).select().single();
       if (!error && data) {
         const current = getLocal('claims', initialClaims);
         setLocal('claims', current.map(c => c.id === id ? data : c));
@@ -478,7 +496,7 @@ export const dataService = {
     let result = null;
     const updated = current.map(c => {
       if (c.id === id) {
-        result = { ...c, ...updates };
+        result = { ...c, ...safeUpdates };
         return result;
       }
       return c;
