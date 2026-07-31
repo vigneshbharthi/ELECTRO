@@ -409,6 +409,8 @@ export function App() {
                     setSettings={setSettings}
                     auth={auth}
                     setAuth={setAuth}
+                    companyProfile={companyProfile}
+                    onSaveCompanyProfile={handleSaveCompanyProfile}
                   />
                 )}
               </>

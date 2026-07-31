@@ -1,19 +1,198 @@
 import React, { useState } from 'react';
-import { Settings, Sliders, Shield, Database, Code, Save, CheckCircle2 } from 'lucide-react';
-import { AppSettings, UserAuth } from '../types';
+import { Settings, Sliders, Database, Save, CheckCircle2, ShieldCheck, UserPlus, Key } from 'lucide-react';
+import { AppSettings, UserAuth, CompanyProfile } from '../types';
 
 interface SettingsModuleProps {
   settings: AppSettings;
   setSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
   auth: UserAuth;
   setAuth: React.Dispatch<React.SetStateAction<UserAuth>>;
+  companyProfile: CompanyProfile;
+  onSaveCompanyProfile: (profile: CompanyProfile) => void;
 }
+
+const AdminCredentialsManager: React.FC<{
+  companyProfile: CompanyProfile;
+  onSave: (profile: CompanyProfile) => void;
+}> = ({ companyProfile, onSave }) => {
+  const [form, setForm] = useState({
+    adminUsername: companyProfile.adminUsername,
+    adminPassword: companyProfile.adminPassword,
+  });
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.adminUsername.trim() || !form.adminPassword.trim()) {
+      alert('Username and password cannot be empty.');
+      return;
+    }
+    if (form.adminPassword !== confirmPassword) {
+      alert('Password and confirm password do not match.');
+      return;
+    }
+    onSave({ ...companyProfile, adminUsername: form.adminUsername.trim(), adminPassword: form.adminPassword });
+    setSavedAt(Date.now());
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+      <div className="bg-teal-500/10 border border-teal-500/30 p-3 rounded-xl">
+        <p className="text-[11px] text-slate-300">
+          Set or update the Admin login credentials. The Admin uses these to sign in via the portal.
+          Only the Developer account can change them.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-slate-300 font-medium mb-1">Admin Username *</label>
+          <input
+            type="text"
+            required
+            value={form.adminUsername}
+            onChange={(e) => setForm({ ...form, adminUsername: e.target.value })}
+            className="w-full px-3 py-2 rounded-xl glass-input font-mono"
+          />
+        </div>
+        <div>
+          <label className="block text-slate-300 font-medium mb-1">New Admin Password *</label>
+          <input
+            type="password"
+            required
+            value={form.adminPassword}
+            onChange={(e) => setForm({ ...form, adminPassword: e.target.value })}
+            className="w-full px-3 py-2 rounded-xl glass-input font-mono"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-slate-300 font-medium mb-1">Confirm New Password *</label>
+          <input
+            type="password"
+            required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl glass-input font-mono"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-800">
+        {savedAt && Date.now() - savedAt < 3000 && (
+          <span className="flex items-center gap-1 text-emerald-400 text-[11px] font-bold">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            Admin credentials updated
+          </span>
+        )}
+        <button
+          type="submit"
+          className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold hover:brightness-110"
+        >
+          <ShieldCheck className="w-4 h-4" />
+          <span>Save Admin Credentials</span>
+        </button>
+      </div>
+    </form>
+  );
+};
+
+const CreateAdminManager: React.FC<{
+  onCreate: (profile: CompanyProfile) => void;
+}> = ({ onCreate }) => {
+  const [form, setForm] = useState({
+    companyName: 'ELECTRO Electricals & Enterprise',
+    gstin: '',
+    phone: '',
+    email: '',
+    address: '',
+    newAdminUsername: '',
+    newAdminPassword: '',
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.newAdminUsername.trim() || !form.newAdminPassword.trim()) {
+      alert('Admin username and password are required.');
+      return;
+    }
+    if (form.newAdminPassword.length < 6) {
+      alert('Admin password must be at least 6 characters.');
+      return;
+    }
+    const profile: CompanyProfile = {
+      companyName: form.companyName.trim() || 'ELECTRO',
+      gstin: form.gstin,
+      phone: form.phone,
+      email: form.email,
+      address: form.address,
+      adminUsername: form.newAdminUsername.trim(),
+      adminPassword: form.newAdminPassword,
+      devUsername: 'dev@electro.in',
+      devPassword: 'dev123',
+    };
+    onCreate(profile);
+    alert(`New Admin account "${profile.adminUsername}" has been created. They can log in immediately.`);
+    setForm({ ...form, newAdminUsername: '', newAdminPassword: '' });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+      <div className="bg-purple-500/10 border border-purple-500/30 p-3 rounded-xl">
+        <p className="text-[11px] text-slate-300">
+          <strong className="text-purple-300">Onboard a new Admin</strong> with their own login. The new Admin can use their username + password to sign in. This overrides the existing Admin credential.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-slate-300 font-medium mb-1">Admin Username *</label>
+          <input
+            type="text"
+            required
+            placeholder="e.g. manager@electro.in"
+            value={form.newAdminUsername}
+            onChange={(e) => setForm({ ...form, newAdminUsername: e.target.value })}
+            className="w-full px-3 py-2 rounded-xl glass-input font-mono"
+          />
+        </div>
+        <div>
+          <label className="block text-slate-300 font-medium mb-1">Admin Password *</label>
+          <input
+            type="password"
+            required
+            minLength={6}
+            placeholder="Minimum 6 characters"
+            value={form.newAdminPassword}
+            onChange={(e) => setForm({ ...form, newAdminPassword: e.target.value })}
+            className="w-full px-3 py-2 rounded-xl glass-input font-mono"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-end pt-2 border-t border-slate-800">
+        <button
+          type="submit"
+          className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold hover:brightness-110"
+        >
+          <UserPlus className="w-4 h-4" />
+          <span>Create / Replace Admin</span>
+        </button>
+      </div>
+    </form>
+  );
+};
 
 export const SettingsModule: React.FC<SettingsModuleProps> = ({
   settings,
   setSettings,
   auth,
-  setAuth
+  setAuth,
+  companyProfile,
+  onSaveCompanyProfile
 }) => {
   const [percentDraft, setPercentDraft] = useState<number>(
     Number.isFinite(settings.pointsPercent) && settings.pointsPercent > 0 ? settings.pointsPercent : 1
@@ -46,7 +225,7 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
             System & Points Percentage Settings
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Configure the reward points percentage, developer auth modes, and database connection.
+            Configure the reward points percentage and database connection.
           </p>
         </div>
       </div>
@@ -105,47 +284,49 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
           </div>
         </div>
 
-        {/* Developer & Authentication Access Settings */}
-        <div className="glass-panel p-6 rounded-2xl space-y-4">
-          <h3 className="text-base font-bold text-slate-100 flex items-center gap-2 border-b border-slate-800 pb-3">
-            <Code className="w-5 h-5 text-purple-400" />
-            Developer & Auth Mode Configuration
-          </h3>
+        {/* Developer-only: Admin Credentials Management */}
+        {auth.userRole === 'developer' && (
+          <div className="glass-panel p-6 rounded-2xl space-y-4">
+            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2 border-b border-slate-800 pb-3">
+              <ShieldCheck className="w-5 h-5 text-teal-400" />
+              Update Admin Credentials (Developer Only)
+            </h3>
 
-          <div className="space-y-3 text-xs">
-            <div className="bg-purple-500/10 border border-purple-500/30 p-4 rounded-xl flex items-center justify-between">
-              <div>
-                <span className="font-bold text-purple-300 block">Developer Full Auth Mode</span>
-                <span className="text-[11px] text-slate-400">Bypasses login authentication friction</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setAuth(prev => ({
-                  ...prev,
-                  isDeveloperMode: !prev.isDeveloperMode,
-                  isAuthenticated: true,
-                  userRole: !prev.isDeveloperMode ? 'developer' : 'admin',
-                  username: !prev.isDeveloperMode ? 'Developer (Full Access)' : 'Admin User'
-                }))}
-                className={`px-4 py-2 rounded-xl font-bold text-xs transition-all ${
-                  auth.isDeveloperMode
-                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
-                    : 'bg-slate-800 text-slate-400 hover:text-white'
-                }`}
-              >
-                {auth.isDeveloperMode ? 'Active (Full Access)' : 'Enable Dev Mode'}
-              </button>
-            </div>
+            <AdminCredentialsManager
+              companyProfile={companyProfile}
+              onSave={onSaveCompanyProfile}
+            />
+          </div>
+        )}
 
+        {/* Developer-only: Onboard a New Admin */}
+        {auth.userRole === 'developer' && (
+          <div className="glass-panel p-6 rounded-2xl space-y-4">
+            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2 border-b border-slate-800 pb-3">
+              <UserPlus className="w-5 h-5 text-purple-400" />
+              Onboard New Admin (Developer Only)
+            </h3>
+
+            <CreateAdminManager onCreate={onSaveCompanyProfile} />
+          </div>
+        )}
+
+        {/* Database Connection info (visible to admin + developer) */}
+        {auth.userRole !== 'guest' && (
+          <div className="glass-panel p-6 rounded-2xl space-y-4">
+            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2 border-b border-slate-800 pb-3">
+              <Database className="w-5 h-5 text-teal-400" />
+              Database Connection
+            </h3>
             <div className="bg-slate-900 p-3 rounded-xl border border-slate-800">
-              <span className="text-slate-400 block text-[11px]">Database Connection:</span>
+              <span className="text-slate-400 block text-[11px]">Status:</span>
               <span className="text-emerald-400 font-mono font-bold text-xs flex items-center gap-1 mt-0.5">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                import.meta.env.VITE_SUPABASE_URL ? `Supabase Connected (${import.meta.env.VITE_SUPABASE_URL})` : 'Supabase (not configured)'
+                {import.meta.env.VITE_SUPABASE_URL ? `Supabase Connected (${import.meta.env.VITE_SUPABASE_URL})` : 'Supabase (not configured)'}
               </span>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

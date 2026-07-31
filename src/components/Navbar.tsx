@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Zap, Database, FileInput, BarChart3, Settings, ShieldAlert, Code, LogOut, CheckCircle2, ChevronDown, Users, Package, Receipt, Award, FileSpreadsheet, Sliders, UserCheck, Menu, X, Building2 } from 'lucide-react';
+import { Zap, Database, FileInput, BarChart3, Settings, ShieldAlert, LogOut, CheckCircle2, ChevronDown, Users, Package, Receipt, Award, FileSpreadsheet, Sliders, UserCheck, Menu, X, Building2 } from 'lucide-react';
 import { UserAuth } from '../types';
 
 interface NavbarProps {
@@ -31,16 +31,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const toggleDevMode = () => {
-    setAuth(prev => ({
-      ...prev,
-      isDeveloperMode: !prev.isDeveloperMode,
-      isAuthenticated: true,
-      userRole: !prev.isDeveloperMode ? 'developer' : 'admin',
-      username: !prev.isDeveloperMode ? 'Developer (Full Access)' : 'Admin User'
-    }));
-  };
 
   const navCategories = [
     {
@@ -203,19 +193,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* User Auth & Controls */}
           <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* Dev Mode Switch - VISIBLE ONLY FOR DEVELOPER */}
-            {(auth.userRole === 'developer' || auth.isDeveloperMode) && (
-              <button
-                onClick={toggleDevMode}
-                title="Toggle Developer Full Access Auth Mode"
-                className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all bg-purple-500/20 border-purple-500/50 text-purple-300 hover:bg-purple-500/30"
-              >
-                <Code className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Dev Auth Active</span>
-                <CheckCircle2 className="w-3 h-3 text-purple-400 ml-1" />
-              </button>
-            )}
-
             {/* Auth Login Status */}
             {auth.isAuthenticated ? (
               <div className="flex items-center space-x-2 bg-slate-900 border border-slate-800 rounded-xl px-2.5 sm:px-3 py-1.5">
@@ -224,7 +201,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {auth.username} <span className="text-[10px] text-teal-400 font-mono">({auth.userRole})</span>
                 </span>
                 <button
-                  onClick={() => setAuth({ isAuthenticated: false, isDeveloperMode: false, userRole: 'guest', username: 'Guest' })}
+                  onClick={() => { localStorage.removeItem('electro_auth'); setAuth({ isAuthenticated: false, isDeveloperMode: false, userRole: 'guest', username: 'Guest' }); }}
                   className="text-slate-400 hover:text-red-400 p-1"
                   title="Logout"
                 >

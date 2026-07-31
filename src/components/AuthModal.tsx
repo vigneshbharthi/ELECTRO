@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Code, User, Lock, X, Phone, Zap, Loader2 } from 'lucide-react';
+import { ShieldCheck, User, Lock, X, Phone, Zap, Loader2 } from 'lucide-react';
 import { UserAuth, Electrician, OrderMan, CompanyProfile } from '../types';
 import { supabase } from '../lib/supabase';
 
@@ -175,18 +175,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
 
     setIsLoading(false);
-    setErrorMessage('Invalid Mobile Number / Login ID or Password. Please verify your credentials and try again.');
+    setErrorMessage('Invalid credentials. Please verify your Mobile Number / Login ID and Password.');
   };
 
-  const handleDeveloperBypass = () => {
-    setAuth({
-      isAuthenticated: true,
-      isDeveloperMode: true,
-      userRole: 'developer',
-      username: 'Developer (Full Access)'
-    });
-    onClose();
-  };
+  // --- Developer login removed — use explicit dev credentials in login form instead ---
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
@@ -264,17 +256,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </button>
         </form>
 
-        {/* Quiet Developer Mode option */}
-        <div className="pt-2 text-center border-t border-slate-800">
-          <button
-            type="button"
-            onClick={handleDeveloperBypass}
-            className="text-[11px] text-purple-400 hover:text-purple-300 flex items-center justify-center gap-1 mx-auto font-medium"
-          >
-            <Code className="w-3.5 h-3.5" />
-            <span>Developer Mode Instant Access</span>
-          </button>
-        </div>
       </div>
     </div>
   );
