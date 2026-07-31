@@ -92,6 +92,20 @@ CREATE TABLE public.electrician_claims (
     remarks TEXT
 );
 
+-- 7. GLOBAL APPLICATION SETTINGS TABLE (single-row, cross-device sync)
+CREATE TABLE public.app_settings (
+    id INT PRIMARY KEY DEFAULT 1,
+    points_percent NUMERIC(5, 2) NOT NULL DEFAULT 1.00,
+    min_bill_amount INTEGER NOT NULL DEFAULT 100,
+    app_name TEXT NOT NULL DEFAULT 'ELECTRO',
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- INSERT THE DEFAULT SETTINGS ROW IF IT DOES NOT EXIST
+INSERT INTO public.app_settings (id, points_percent, min_bill_amount, app_name)
+VALUES (1, 1.00, 100, 'ELECTRO')
+ON CONFLICT (id) DO NOTHING;
+
 -- ENABLE ROW LEVEL SECURITY
 ALTER TABLE public.electricians ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_men ENABLE ROW LEVEL SECURITY;
@@ -99,6 +113,7 @@ ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.point_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.redemptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.electrician_claims ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
 
 -- CREATE INDEXES ON FOREIGN KEYS FOR QUERY PERFORMANCE
 CREATE INDEX IF NOT EXISTS idx_point_transactions_electrician_id ON public.point_transactions(electrician_id);
@@ -112,6 +127,7 @@ CREATE POLICY "Allow all access to products" ON public.products FOR ALL USING (t
 CREATE POLICY "Allow all access to point_transactions" ON public.point_transactions FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access to redemptions" ON public.redemptions FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access to electrician_claims" ON public.electrician_claims FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access to app_settings" ON public.app_settings FOR ALL USING (true) WITH CHECK (true);
 
 -- GRANT PRIVILEGES TO ANON ROLE (REQUIRED - RLS policies alone are not enough)
 GRANT USAGE ON SCHEMA public TO anon;
@@ -121,3 +137,4 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.products TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.point_transactions TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.redemptions TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.electrician_claims TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.app_settings TO anon;

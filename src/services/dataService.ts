@@ -542,6 +542,37 @@ export const dataService = {
     setLocal('company_profile', profile);
   },
 
+  // GLOBAL APPLICATION SETTINGS (cross-device sync via Supabase)
+  async getAppSettings(): Promise<{ pointsPercent: number; minBillAmount: number; appName: string } | null> {
+    try {
+      const { data, error } = await supabase.from('app_settings').select('*').eq('id', 1).maybeSingle();
+      if (!error && data) {
+        return {
+          pointsPercent: Number(data.points_percent) || 1,
+          minBillAmount: Number(data.min_bill_amount) || 100,
+          appName: data.app_name || 'ELECTRO'
+        };
+      }
+    } catch (e) {
+      console.warn('Supabase get app_settings error:', e);
+    }
+    return null;
+  },
+
+  async saveAppSettings(settings: { pointsPercent: number; minBillAmount: number; appName: string }): Promise<void> {
+    try {
+      await supabase.from('app_settings').upsert({
+        id: 1,
+        points_percent: settings.pointsPercent,
+        min_bill_amount: settings.minBillAmount,
+        app_name: settings.appName,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
+    } catch (e) {
+      console.warn('Supabase save app_settings error:', e);
+    }
+  },
+
   // ORDER MAN CRUD SERVICES
   async getOrderMen(): Promise<OrderMan[]> {
     let supabaseOMs: OrderMan[] = [];

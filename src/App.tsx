@@ -47,7 +47,38 @@ export function App() {
     try {
       localStorage.setItem('electro_app_settings', JSON.stringify(settings));
     } catch {}
+    // Push to Supabase if current user is admin/developer (so electrician devices sync)
+    if (auth.userRole === 'admin' || auth.userRole === 'developer') {
+      persistAppSettingsToSupabase();
+    }
   }, [settings]);
+
+  // Fetch global app_settings from Supabase (cross-device sync — overrides local defaults)
+  const syncAppSettingsFromSupabase = async () => {
+    try {
+      const supabaseSettings = await dataService.getAppSettings();
+      if (supabaseSettings) {
+        setSettings(supabaseSettings);
+        localStorage.setItem('electro_app_settings', JSON.stringify(supabaseSettings));
+      }
+    } catch (e) {
+      console.warn('App settings Supabase sync skipped:', e);
+    }
+  };
+
+  // Push admin's current settings to Supabase so electricians see the same rate
+  const persistAppSettingsToSupabase = async () => {
+    try {
+      await dataService.saveAppSettings(settings);
+    } catch (e) {
+      console.warn('App settings save to Supabase failed:', e);
+    }
+  };
+
+  // On mount: try to load shared settings from Supabase
+  useEffect(() => {
+    syncAppSettingsFromSupabase();
+  }, []);
 
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile>(() => dataService.getCompanyProfile());
 

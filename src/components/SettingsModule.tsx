@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Settings, Sliders, Shield, Database, Code, Save, CheckCircle2 } from 'lucide-react';
 import { AppSettings, UserAuth } from '../types';
 
@@ -15,12 +15,19 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
   auth,
   setAuth
 }) => {
-  const handlePercentChange = (percent: number) => {
-    if (!Number.isFinite(percent) || percent <= 0) return;
-    setSettings(prev => ({
-      ...prev,
-      pointsPercent: percent
-    }));
+  const [percentDraft, setPercentDraft] = useState<number>(
+    Number.isFinite(settings.pointsPercent) && settings.pointsPercent > 0 ? settings.pointsPercent : 1
+  );
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const handleSave = () => {
+    if (!Number.isFinite(percentDraft) || percentDraft <= 0 || percentDraft > 100) {
+      alert('Please enter a valid percentage between 0.1 and 100.');
+      return;
+    }
+    setSettings(prev => ({ ...prev, pointsPercent: percentDraft }));
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3000);
   };
 
   const currentPercent = Number.isFinite(settings.pointsPercent) && settings.pointsPercent > 0
@@ -63,17 +70,30 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
                   min="0.1"
                   max="100"
                   step="0.1"
-                  value={currentPercent}
+                  value={percentDraft}
                   onChange={(e) => {
                     const v = parseFloat(e.target.value);
-                    // Allow user to clear/intermediate states without snapping back to 1
-                    if (e.target.value === '' || Number.isNaN(v)) return;
-                    handlePercentChange(v);
+                    if (e.target.value === '' || Number.isNaN(v)) { setPercentDraft(0); return; }
+                    setPercentDraft(v);
                   }}
                   className="w-24 px-3 py-2 rounded-xl glass-input font-mono font-bold text-emerald-400"
                 />
                 <span className="text-slate-300 font-bold">%</span>
                 <span className="text-[11px] text-slate-500 ml-1">Allowed: 0.1 – 100</span>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold text-xs hover:brightness-110 transition-all"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save</span>
+                </button>
+                {saveSuccess && (
+                  <span className="flex items-center gap-1 text-emerald-400 text-[11px] font-bold animate-fadeIn">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Saved
+                  </span>
+                )}
               </div>
               <p className="text-[11px] text-slate-400 mt-2">
                 Formula: <code className="px-1.5 py-0.5 rounded bg-slate-900 text-teal-300 font-mono">Points = ⌊ Bill Amount × {currentPercent}% ⌋</code>
