@@ -26,12 +26,12 @@ export function App() {
     appName: 'ELECTRO'
   });
 
-  // User Auth State
+  // User Auth State - Default to unauthenticated guest so LOGIN is required first!
   const [auth, setAuth] = useState<UserAuth>({
-    isAuthenticated: true,
-    isDeveloperMode: true,
-    userRole: 'developer',
-    username: 'Developer (Full Access)'
+    isAuthenticated: false,
+    isDeveloperMode: false,
+    userRole: 'guest',
+    username: 'Guest'
   });
 
   // Application Data States
@@ -163,7 +163,7 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans">
-      {/* Navbar with dialog popups */}
+      {/* Navbar with dropdown navigation */}
       <Navbar
         activeModule={activeModule}
         setActiveModule={setActiveModule}
@@ -177,6 +177,18 @@ export function App() {
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : !auth.isAuthenticated ? (
+          /* LOGIN SCREEN MANDATORY FIRST */
+          <div className="py-10">
+            <AuthModal
+              isOpen={true}
+              onClose={() => {}}
+              auth={auth}
+              setAuth={setAuth}
+              electricians={electricians}
+              orderMen={orderMen}
+            />
           </div>
         ) : (
           <>
@@ -309,15 +321,17 @@ export function App() {
         </div>
       </footer>
 
-      {/* Auth Modal with Role Login Tabs */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        auth={auth}
-        setAuth={setAuth}
-        electricians={electricians}
-        orderMen={orderMen}
-      />
+      {/* Auth Modal when requested manually */}
+      {isAuthModalOpen && (
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          auth={auth}
+          setAuth={setAuth}
+          electricians={electricians}
+          orderMen={orderMen}
+        />
+      )}
     </div>
   );
 }
