@@ -39,13 +39,35 @@ export function App() {
 
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile>(() => dataService.getCompanyProfile());
 
-  // User Auth State - Default to unauthenticated guest so LOGIN is required first!
-  const [auth, setAuth] = useState<UserAuth>({
-    isAuthenticated: false,
-    isDeveloperMode: false,
-    userRole: 'guest',
-    username: 'Guest'
-  });
+  // User Auth State - Persisted in localStorage so login survives page refresh
+  const getInitialAuth = (): UserAuth => {
+    try {
+      const stored = localStorage.getItem('electro_auth');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.isAuthenticated) return parsed;
+      }
+    } catch {}
+    return { isAuthenticated: false, isDeveloperMode: false, userRole: 'guest', username: 'Guest' };
+  };
+  const [auth, setAuth] = useState<UserAuth>(getInitialAuth);
+
+  // Persist auth to localStorage on every change
+  useEffect(() => {
+    try {
+      if (auth.isAuthenticated) {
+        localStorage.setItem('electro_auth', JSON.stringify(auth));
+      } else {
+        localStorage.removeItem('electro_auth');
+      }
+    } catch {}
+  }, [auth]);
+
+  // Clear persisted auth on explicit logout
+  const handleLogout = () => {
+    localStorage.removeItem('electro_auth');
+    setAuth({ isAuthenticated: false, isDeveloperMode: false, userRole: 'guest', username: 'Guest' });
+  };
 
   // Application Data States
   const [electricians, setElectricians] = useState<Electrician[]>([]);
