@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Code, User, Lock, X, Phone, Zap } from 'lucide-react';
+import { ShieldCheck, Code, User, Lock, X, Phone, Zap, Loader2 } from 'lucide-react';
 import { UserAuth, Electrician, OrderMan, CompanyProfile } from '../types';
+import { supabase } from '../lib/supabase';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
 
@@ -32,13 +34,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const devUser = companyProfile?.devUsername || 'dev@electro.in';
   const devPass = companyProfile?.devPassword || 'dev123';
 
-  // SMART AUTOMATIC ROLE DETECTION LOGIN
-  const handleSmartLogin = (e: React.FormEvent) => {
+  // SMART AUTOMATIC ROLE DETECTION LOGIN WITH DIRECT SUPABASE ON-DEMAND FALLBACK
+  const handleSmartLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
+    setIsLoading(true);
 
     const inputClean = username.trim();
     const passClean = password.trim();
+    const inputMobileClean = inputClean.replace(/\D/g, '');
 
     // 1. Check if Developer Login
     if (inputClean.toLowerCase() === devUser.toLowerCase() || inputClean.toLowerCase() === 'developer') {
@@ -49,6 +53,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           userRole: 'developer',
           username: 'Developer (Full Access)'
         });
+        setIsLoading(false);
         onClose();
         return;
       }
@@ -63,15 +68,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           userRole: 'admin',
           username: 'System Admin'
         });
+        setIsLoading(false);
         onClose();
         return;
       }
     }
 
-    const inputMobileClean = inputClean.replace(/\D/g, '');
-
-    // 3. Check if Electrician (lookup by mobile digits, email, or name)
-    const elec = electricians.find(e => {
+    // 3. Check if Electrician (local state search first)
+    let elec = electricians.find(e => {
       const eMobileClean = (e.mobile || '').replace(/\D/g, '');
       const isMobileMatch = inputMobileClean.length >= 7 && eMobileClean === inputMobileClean;
       const isRawMobileMatch = e.mobile.trim() === inputClean;
@@ -79,6 +83,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       const isNameMatch = Boolean(e.name && e.name.toLowerCase() === inputClean.toLowerCase());
       return isMobileMatch || isRawMobileMatch || isEmailMatch || isNameMatch;
     });
+
+    // Direct Supabase Query Fallback for Electrician (Guarantees instant mobile login!)
+    if (!elec) {
+      try {
+        const queryFilter = inputMobileClean.length >= 7 
+          ? `mobile.eq.${inputClean},mobile.eq.${inputMobileClean},email.ilike.${inputClean},name.ilike.${inputClean}`
+          : `mobile.eq.${inputClean},email.ilike.${inputClean},name.ilike.${inputClean}`;
+        
+        const { data, error } = await supabase
+          .from('electricians')
+          .select('*')
+          .or(queryFilter)
+          .maybeSingle();
+
+        if (!error && data) {
+          elec = data as Electrician;
+        }
+      } catch (err) {
+        console.warn('Direct Supabase electrician lookup warning:', err);
+      }
+    }
 
     if (elec) {
       const elecPass = (elec.password || '123456').trim();
@@ -91,13 +116,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           userId: elec.id,
           userMobile: elec.mobile
         });
+        setIsLoading(false);
         onClose();
         return;
       }
     }
 
-    // 4. Check if Order Man (lookup by mobile digits, email, or name)
-    const om = orderMen.find(o => {
+    // 4. Check if Order Man (local state search first)
+    let om = orderMen.find(o => {
       const oMobileClean = (o.mobile || '').replace(/\D/g, '');
       const isMobileMatch = inputMobileClean.length >= 7 && oMobileClean === inputMobileClean;
       const isRawMobileMatch = o.mobile.trim() === inputClean;
@@ -105,6 +131,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       const isNameMatch = Boolean(o.name && o.name.toLowerCase() === inputClean.toLowerCase());
       return isMobileMatch || isRawMobileMatch || isEmailMatch || isNameMatch;
     });
+
+    // Direct Supabase Query Fallback for Order Man
+    if (!om) {
+      try {
+        const queryFilter = inputMobileClean.length >= 7 
+          ? `mobile.eq.${inputClean},mobile.eq.${inputMobileClean},email.ilike.${inputClean},name.ilike.${inputClean}`
+          : `mobile.eq.${inputClean},email.ilike.${inputClean},name.ilike.${inputClean}`;
+
+        const { data, error } = await supabase
+          .from('order_men')
+          .select('*')
+          .or(queryFilter)
+          .maybeSingle();
+
+        if (!error && data) {
+          om = data as OrderMan;
+        }
+      } catch (err) {
+        console.warn('Direct Supabase order_men lookup warning:', err);
+      }
+    }
 
     if (om) {
       const omPass = (om.password || 'order123').trim();
@@ -117,11 +164,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           userId: om.id,
           userMobile: om.mobile
         });
+        setIsLoading(false);
         onClose();
         return;
       }
     }
 
+    setIsLoading(false);
     setErrorMessage('Invalid Mobile Number / Login ID or Password. Please verify your credentials and try again.');
   };
 
@@ -161,7 +210,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
         )}
 
-        {/* Clean Login Form without visible sample passwords */}
+        {/* Login Form */}
         <form onSubmit={handleSmartLogin} className="space-y-4 text-xs">
           <div>
             <label className="block text-slate-300 font-medium mb-1">
@@ -197,9 +246,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
           <button
             type="submit"
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-teal-500 via-emerald-500 to-cyan-500 text-slate-950 font-extrabold text-xs transition-all shadow-lg shadow-teal-500/20 hover:brightness-110"
+            disabled={isLoading}
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-teal-500 via-emerald-500 to-cyan-500 text-slate-950 font-extrabold text-xs transition-all shadow-lg shadow-teal-500/20 hover:brightness-110 flex items-center justify-center space-x-2"
           >
-            Sign In
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Authenticating...</span>
+              </>
+            ) : (
+              <span>Sign In</span>
+            )}
           </button>
         </form>
 
