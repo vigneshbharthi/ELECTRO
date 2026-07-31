@@ -18,6 +18,9 @@ CREATE TABLE IF NOT EXISTS public.electricians (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Ensure password column exists if electricians table was created earlier without it
+ALTER TABLE public.electricians ADD COLUMN IF NOT EXISTS password TEXT DEFAULT '123456';
+
 -- 2. ORDER MEN TABLE (SALES PERSONNEL)
 CREATE TABLE IF NOT EXISTS public.order_men (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -30,6 +33,9 @@ CREATE TABLE IF NOT EXISTS public.order_men (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Ensure password column exists if order_men table exists
+ALTER TABLE public.order_men ADD COLUMN IF NOT EXISTS password TEXT DEFAULT 'order123';
 
 -- 3. PRODUCTS TABLE (ORDER MAN CATALOG)
 CREATE TABLE IF NOT EXISTS public.products (
