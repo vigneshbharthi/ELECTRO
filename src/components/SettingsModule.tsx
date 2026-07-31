@@ -36,10 +36,10 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
           </div>
           <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
             <Settings className="w-6 h-6 text-teal-400" />
-            System & Points Ratio Settings
+            System & Points Percentage Settings
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Configure bill-to-points calculation formulas, developer auth modes, and database connection.
+            Configure the reward points percentage, developer auth modes, and database connection.
           </p>
         </div>
       </div>
@@ -49,27 +49,37 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
         <div className="glass-panel p-6 rounded-2xl space-y-4">
           <h3 className="text-base font-bold text-slate-100 flex items-center gap-2 border-b border-slate-800 pb-3">
             <Sliders className="w-5 h-5 text-teal-400" />
-            Bill Value Points Calculation Formula
+            Points Reward Rate (Percentage of Bill Value)
           </h3>
 
           <div className="space-y-3 text-xs">
             <div>
               <label className="block text-slate-300 font-medium mb-1">
-                Reward Points (as % of Bill Value)
+                Reward Points (as % of Bill Value) *
               </label>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
                   min="0.1"
+                  max="100"
                   step="0.1"
                   value={currentPercent}
-                  onChange={(e) => handlePercentChange(parseFloat(e.target.value) || 1)}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    // Allow user to clear/intermediate states without snapping back to 1
+                    if (e.target.value === '' || Number.isNaN(v)) return;
+                    handlePercentChange(v);
+                  }}
                   className="w-24 px-3 py-2 rounded-xl glass-input font-mono font-bold text-emerald-400"
                 />
                 <span className="text-slate-300 font-bold">%</span>
+                <span className="text-[11px] text-slate-500 ml-1">Allowed: 0.1 – 100</span>
               </div>
+              <p className="text-[11px] text-slate-400 mt-2">
+                Formula: <code className="px-1.5 py-0.5 rounded bg-slate-900 text-teal-300 font-mono">Points = ⌊ Bill Amount × {currentPercent}% ⌋</code>
+              </p>
               <p className="text-[11px] text-slate-400 mt-1">
-                Example: If set to 1%, a ₹15,000 bill awards <strong>150 Points</strong> to the electrician.
+                Example: At <strong>{currentPercent}%</strong>, a <strong>₹15,000</strong> bill awards <strong className="text-amber-400">{Math.floor(15000 * (currentPercent / 100))} Points</strong> to the electrician.
               </p>
             </div>
           </div>
