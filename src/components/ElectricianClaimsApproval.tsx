@@ -74,7 +74,7 @@ export const ElectricianClaimsApproval: React.FC<ElectricianClaimsApprovalProps>
       return;
     }
 
-    const claimedPts = Math.floor(numericAmount * settings.pointsPerRupee);
+    const claimedPts = Math.floor(numericAmount * (settings.pointsPercent / 100));
 
     await onSubmitClaim({
       electrician_id: elec.id,

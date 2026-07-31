@@ -22,9 +22,9 @@ export const BillEntryModule: React.FC<BillEntryModuleProps> = ({
   const [remarks, setRemarks] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Calculate points automatically from Bill Value!
+  // Calculate points automatically from Bill Value (percentage basis)
   const numericAmount = Number(billAmount);
-  const calculatedPoints = Math.floor(numericAmount * settings.pointsPerRupee);
+  const calculatedPoints = Math.floor(numericAmount * (settings.pointsPercent / 100));
 
   const selectedElectrician = electricians.find(e => e.id === selectedElectricianId);
 
@@ -85,7 +85,7 @@ export const BillEntryModule: React.FC<BillEntryModuleProps> = ({
           <div className="text-xs">
             <span className="text-slate-400 block">Current Reward Rate:</span>
             <span className="text-teal-300 font-extrabold">
-              1 Point per ₹{(1 / settings.pointsPerRupee).toFixed(0)} Spent
+              {settings.pointsPercent}% of Bill Value
             </span>
           </div>
         </div>

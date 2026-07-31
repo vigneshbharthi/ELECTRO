@@ -15,15 +15,15 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
   auth,
   setAuth
 }) => {
-  const handlePointsRatioChange = (rupeesForOnePoint: number) => {
-    if (rupeesForOnePoint <= 0) return;
+  const handlePercentChange = (percent: number) => {
+    if (percent <= 0) return;
     setSettings(prev => ({
       ...prev,
-      pointsPerRupee: 1 / rupeesForOnePoint
+      pointsPercent: percent
     }));
   };
 
-  const currentRupeesPerPoint = (1 / settings.pointsPerRupee).toFixed(0);
+  const currentPercent = settings.pointsPercent;
 
   return (
     <div className="space-y-6">
@@ -53,21 +53,21 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
           <div className="space-y-3 text-xs">
             <div>
               <label className="block text-slate-300 font-medium mb-1">
-                Bill Amount (₹) required for 1 Reward Point
+                Reward Points (as % of Bill Value)
               </label>
               <div className="flex items-center gap-2">
-                <span className="text-slate-400 font-bold">1 Point = ₹</span>
                 <input
                   type="number"
-                  min="1"
-                  step="5"
-                  value={currentRupeesPerPoint}
-                  onChange={(e) => handlePointsRatioChange(parseFloat(e.target.value) || 100)}
-                  className="w-32 px-3 py-2 rounded-xl glass-input font-mono font-bold text-emerald-400"
+                  min="0.1"
+                  step="0.1"
+                  value={currentPercent}
+                  onChange={(e) => handlePercentChange(parseFloat(e.target.value) || 1)}
+                  className="w-24 px-3 py-2 rounded-xl glass-input font-mono font-bold text-emerald-400"
                 />
+                <span className="text-slate-300 font-bold">%</span>
               </div>
               <p className="text-[11px] text-slate-400 mt-1">
-                Example: If set to ₹100, a ₹15,000 bill awards <strong>150 Points</strong> to the electrician.
+                Example: If set to 1%, a ₹15,000 bill awards <strong>150 Points</strong> to the electrician.
               </p>
             </div>
           </div>

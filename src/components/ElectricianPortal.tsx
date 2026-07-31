@@ -97,7 +97,7 @@ export const ElectricianPortal: React.FC<ElectricianPortalProps> = ({
     }
 
     setIsSubmitting(true);
-    const claimedPts = Math.floor(numericAmount * settings.pointsPerRupee);
+    const claimedPts = Math.floor(numericAmount * (settings.pointsPercent / 100));
 
     await onSubmitClaim({
       electrician_id: electrician.id,
@@ -125,7 +125,7 @@ export const ElectricianPortal: React.FC<ElectricianPortalProps> = ({
       return;
     }
 
-    const claimedPts = Math.floor(numericAmount * settings.pointsPerRupee);
+    const claimedPts = Math.floor(numericAmount * (settings.pointsPercent / 100));
 
     await onUpdateClaim(editingClaim.id, {
       bill_no: editBillNo,
@@ -386,7 +386,7 @@ export const ElectricianPortal: React.FC<ElectricianPortalProps> = ({
                 />
                 {Number(billAmount) > 0 && (
                   <p className="text-[11px] text-amber-400 mt-1 font-mono">
-                    Estimated Points Claimable: +{Math.floor(Number(billAmount) * settings.pointsPerRupee)} Points
+                    Estimated Points Claimable: +{Math.floor(Number(billAmount) * (settings.pointsPercent / 100))} Points
                   </p>
                 )}
               </div>

@@ -26,7 +26,7 @@ export function App() {
       const stored = localStorage.getItem('electro_app_settings');
       if (stored) return JSON.parse(stored);
     } catch {}
-    return { pointsPerRupee: 0.01, minBillAmount: 100, appName: 'ELECTRO' };
+    return { pointsPercent: 1, minBillAmount: 100, appName: 'ELECTRO' };
   };
   const [settings, setSettings] = useState<AppSettings>(getInitialSettings);
 

@@ -96,7 +96,7 @@ export interface UserAuth {
 }
 
 export interface AppSettings {
-  pointsPerRupee: number; // e.g. 0.01 means 1 point for every ₹100 bill
+  pointsPercent: number; // Percentage of bill value awarded as points, e.g. 1 means 1% (₹100 = 1 pt at 1%)
   minBillAmount: number;
   appName: string;
 }
