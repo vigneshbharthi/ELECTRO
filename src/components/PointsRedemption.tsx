@@ -19,14 +19,15 @@ export const PointsRedemption: React.FC<PointsRedemptionProps> = ({
 }) => {
   const [selectedElectricianId, setSelectedElectricianId] = useState<string>(electricians[0]?.id || '');
   const [transactionType, setTransactionType] = useState<'debit' | 'credit'>('debit');
-  const [pointsAmount, setPointsAmount] = useState<number>(100);
-  const [particular, setParticular] = useState<string>('Redemption: Fastrack Gift Voucher');
+  const [pointsAmount, setPointsAmount] = useState<number | ''>('');
+  const [particular, setParticular] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Admin Direct Adjust/Debit/Credit Points
   const handleDirectPointAdjustment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedElectricianId || pointsAmount <= 0) {
+    const numericPoints = Number(pointsAmount);
+    if (!selectedElectricianId || !numericPoints || numericPoints <= 0) {
       alert('Please select an electrician and enter valid points!');
       return;
     }
@@ -34,7 +35,7 @@ export const PointsRedemption: React.FC<PointsRedemptionProps> = ({
     const elec = electricians.find(e => e.id === selectedElectricianId);
     if (!elec) return;
 
-    if (transactionType === 'debit' && elec.points_balance < pointsAmount) {
+    if (transactionType === 'debit' && elec.points_balance < numericPoints) {
       alert(`Insufficient balance! Electrician ${elec.name} has only ${elec.points_balance} points available.`);
       return;
     }
@@ -45,8 +46,8 @@ export const PointsRedemption: React.FC<PointsRedemptionProps> = ({
       electrician_name: elec.name,
       date: new Date().toISOString(),
       particular: particular || (transactionType === 'credit' ? 'Admin Manual Bonus Credit' : 'Admin Gift Voucher Debit'),
-      debit_points: transactionType === 'debit' ? pointsAmount : 0,
-      credit_points: transactionType === 'credit' ? pointsAmount : 0
+      debit_points: transactionType === 'debit' ? numericPoints : 0,
+      credit_points: transactionType === 'credit' ? numericPoints : 0
     });
 
     setIsSubmitting(false);

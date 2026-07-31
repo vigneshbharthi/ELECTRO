@@ -20,8 +20,11 @@ export const PointsLedgerReport: React.FC<PointsLedgerReportProps> = ({
   const [toDate, setToDate] = useState<string>('');
 
   // Filter transactions
+  const selectedElec = electricians.find(e => e.id === selectedElectricianId);
   const filteredTransactions = transactions.filter(t => {
-    const matchesElectrician = selectedElectricianId === 'all' || t.electrician_id === selectedElectricianId;
+    const matchesElectrician = selectedElectricianId === 'all' || 
+      t.electrician_id === selectedElectricianId || 
+      (selectedElec && (t.electrician_name === selectedElec.name || t.electrician_id === selectedElec.id));
     const matchesSearch = t.particular.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (t.electrician_name && t.electrician_name.toLowerCase().includes(searchTerm.toLowerCase()));
 

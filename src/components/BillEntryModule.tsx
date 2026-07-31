@@ -16,21 +16,21 @@ export const BillEntryModule: React.FC<BillEntryModuleProps> = ({
   onAddTransaction
 }) => {
   const [selectedElectricianId, setSelectedElectricianId] = useState<string>(electricians[0]?.id || '');
-  const [billNo, setBillNo] = useState<string>(`INV-${Math.floor(100000 + Math.random() * 900000)}`);
-  const [billAmount, setBillAmount] = useState<number>(10000);
+  const [billNo, setBillNo] = useState<string>('');
+  const [billAmount, setBillAmount] = useState<number | ''>('');
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
-  const [remarks, setRemarks] = useState<string>('Electrical materials purchase bill');
+  const [remarks, setRemarks] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Calculate points automatically from Bill Value!
-  // Formula: points = Math.floor(billAmount * settings.pointsPerRupee)
-  const calculatedPoints = Math.floor(billAmount * settings.pointsPerRupee);
+  const numericAmount = Number(billAmount);
+  const calculatedPoints = Math.floor(numericAmount * settings.pointsPerRupee);
 
   const selectedElectrician = electricians.find(e => e.id === selectedElectricianId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedElectricianId || billAmount <= 0) {
+    if (!selectedElectricianId || !numericAmount || numericAmount <= 0) {
       alert('Please select an electrician and enter a valid bill amount!');
       return;
     }
