@@ -9,22 +9,25 @@ import { PointsRedemption } from './components/PointsRedemption';
 import { ElectricianClaimsApproval } from './components/ElectricianClaimsApproval';
 import { PointsLedgerReport } from './components/PointsLedgerReport';
 import { SettingsModule } from './components/SettingsModule';
+import { CompanyProfileSettings } from './components/CompanyProfileSettings';
 import { ElectricianPortal } from './components/ElectricianPortal';
 import { OrderManProductView } from './components/OrderManProductView';
 import { AuthModal } from './components/AuthModal';
 import { dataService } from './services/dataService';
-import { Electrician, OrderMan, Product, PointTransaction, Redemption, ElectricianClaim, UserAuth, AppSettings } from './types';
+import { Electrician, OrderMan, Product, PointTransaction, Redemption, ElectricianClaim, UserAuth, AppSettings, CompanyProfile } from './types';
 
 export function App() {
   const [activeModule, setActiveModule] = useState<string>('dashboard');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
 
-  // App Settings
+  // App Settings & Company Profile
   const [settings, setSettings] = useState<AppSettings>({
     pointsPerRupee: 0.01, // Default: 1 Point for every ₹100 bill
     minBillAmount: 100,
     appName: 'ELECTRO'
   });
+
+  const [companyProfile, setCompanyProfile] = useState<CompanyProfile>(() => dataService.getCompanyProfile());
 
   // User Auth State - Default to unauthenticated guest so LOGIN is required first!
   const [auth, setAuth] = useState<UserAuth>({
@@ -72,6 +75,11 @@ export function App() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleSaveCompanyProfile = (profile: CompanyProfile) => {
+    setCompanyProfile(profile);
+    dataService.saveCompanyProfile(profile);
+  };
 
   // ELECTRICIANS HANDLERS
   const handleAddElectrician = async (data: Omit<Electrician, 'id' | 'points_balance' | 'created_at' | 'updated_at'>) => {
@@ -152,6 +160,16 @@ export function App() {
     await loadData();
   };
 
+  const handleUpdateClaim = async (id: string, updates: Partial<ElectricianClaim>) => {
+    await dataService.updateClaim(id, updates);
+    await loadData();
+  };
+
+  const handleDeleteClaim = async (id: string) => {
+    await dataService.deleteClaim(id);
+    await loadData();
+  };
+
   const handleViewLedgerForElectrician = (electricianId: string) => {
     setSelectedLedgerElectricianId(electricianId);
     setActiveModule('ledger_report');
@@ -188,6 +206,7 @@ export function App() {
               setAuth={setAuth}
               electricians={electricians}
               orderMen={orderMen}
+              companyProfile={companyProfile}
             />
           </div>
         ) : (
@@ -199,6 +218,8 @@ export function App() {
                 transactions={transactions}
                 claims={claims}
                 onSubmitClaim={handleSubmitClaim}
+                onUpdateClaim={handleUpdateClaim}
+                onDeleteClaim={handleDeleteClaim}
               />
             ) : auth.userRole === 'orderman' ? (
               <OrderManProductView
@@ -286,6 +307,13 @@ export function App() {
                 )}
 
                 {/* SETTINGS */}
+                {activeModule === 'company_profile' && (
+                  <CompanyProfileSettings
+                    companyProfile={companyProfile}
+                    onSaveProfile={handleSaveCompanyProfile}
+                  />
+                )}
+
                 {activeModule === 'app_settings' && (
                   <SettingsModule
                     settings={settings}
@@ -330,6 +358,7 @@ export function App() {
           setAuth={setAuth}
           electricians={electricians}
           orderMen={orderMen}
+          companyProfile={companyProfile}
         />
       )}
     </div>

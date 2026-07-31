@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Code, User, Lock, X, CheckCircle2, Phone, Zap, Sparkles } from 'lucide-react';
-import { UserAuth, Electrician, OrderMan } from '../types';
+import { ShieldCheck, Code, User, Lock, X, Phone, Zap } from 'lucide-react';
+import { UserAuth, Electrician, OrderMan, CompanyProfile } from '../types';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -9,6 +9,7 @@ interface AuthModalProps {
   setAuth: React.Dispatch<React.SetStateAction<UserAuth>>;
   electricians: Electrician[];
   orderMen: OrderMan[];
+  companyProfile?: CompanyProfile;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -17,13 +18,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   auth,
   setAuth,
   electricians,
-  orderMen
+  orderMen,
+  companyProfile
 }) => {
-  const [username, setUsername] = useState('9876543210');
-  const [password, setPassword] = useState('123456');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
   if (!isOpen) return null;
+
+  const adminUser = companyProfile?.adminUsername || 'admin@electro.in';
+  const adminPass = companyProfile?.adminPassword || 'admin123';
+  const devUser = companyProfile?.devUsername || 'dev@electro.in';
+  const devPass = companyProfile?.devPassword || 'dev123';
 
   // SMART AUTOMATIC ROLE DETECTION LOGIN
   const handleSmartLogin = (e: React.FormEvent) => {
@@ -31,10 +38,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setErrorMessage('');
 
     const inputClean = username.trim();
+    const passClean = password.trim();
 
-    // 1. Check if Admin
-    if (inputClean === 'admin@electro.in' || inputClean === 'admin') {
-      if (password === 'admin123' || password === 'admin') {
+    // 1. Check if Developer Login
+    if (inputClean.toLowerCase() === devUser.toLowerCase() || inputClean.toLowerCase() === 'developer') {
+      if (passClean === devPass || passClean === 'dev123') {
+        setAuth({
+          isAuthenticated: true,
+          isDeveloperMode: true,
+          userRole: 'developer',
+          username: 'Developer (Full Access)'
+        });
+        onClose();
+        return;
+      }
+    }
+
+    // 2. Check if Admin Login
+    if (inputClean.toLowerCase() === adminUser.toLowerCase() || inputClean.toLowerCase() === 'admin') {
+      if (passClean === adminPass || passClean === 'admin123') {
         setAuth({
           isAuthenticated: true,
           isDeveloperMode: false,
@@ -46,10 +68,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
     }
 
-    // 2. Check if Electrician (lookup by mobile or email)
-    const elec = electricians.find(e => e.mobile === inputClean || e.email.toLowerCase() === inputClean.toLowerCase() || e.name.toLowerCase() === inputClean.toLowerCase());
+    // 3. Check if Electrician (lookup by mobile or email)
+    const elec = electricians.find(e => e.mobile === inputClean || (e.email && e.email.toLowerCase() === inputClean.toLowerCase()) || e.name.toLowerCase() === inputClean.toLowerCase());
     if (elec) {
-      if (elec.password === password || password === '123456') {
+      if (elec.password === passClean || passClean === '123456') {
         setAuth({
           isAuthenticated: true,
           isDeveloperMode: false,
@@ -63,10 +85,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
     }
 
-    // 3. Check if Order Man (lookup by mobile or email)
+    // 4. Check if Order Man (lookup by mobile or email)
     const om = orderMen.find(o => o.mobile === inputClean || (o.email && o.email.toLowerCase() === inputClean.toLowerCase()) || o.name.toLowerCase() === inputClean.toLowerCase());
     if (om) {
-      if (om.password === password || password === 'order123') {
+      if (om.password === passClean || passClean === 'order123') {
         setAuth({
           isAuthenticated: true,
           isDeveloperMode: false,
@@ -80,19 +102,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
     }
 
-    // Default fallback if admin credentials matched
-    if (inputClean === 'admin@electro.in' || inputClean === 'admin') {
-      setAuth({
-        isAuthenticated: true,
-        isDeveloperMode: false,
-        userRole: 'admin',
-        username: 'System Admin'
-      });
-      onClose();
-      return;
-    }
-
-    setErrorMessage('Invalid Mobile Number / Login ID or Password. Try Admin (admin@electro.in), Electrician (9876543210 / 123456), or Order Man (9812345678 / order123).');
+    setErrorMessage('Invalid Mobile Number / Login ID or Password. Please verify your credentials and try again.');
   };
 
   const handleDeveloperBypass = () => {
@@ -106,7 +116,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
       <div className="glass-panel w-full max-w-md rounded-2xl p-6 relative border border-slate-700 shadow-2xl space-y-5">
         <button
           onClick={onClose}
@@ -119,45 +129,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center mx-auto mb-3 text-slate-950 shadow-lg shadow-teal-500/20">
             <Zap className="w-7 h-7 stroke-[2.5]" />
           </div>
-          <h2 className="text-xl font-extrabold text-slate-100">ELECTRO Smart Login</h2>
+          <h2 className="text-xl font-extrabold text-slate-100">ELECTRO Portal Login</h2>
           <p className="text-xs text-slate-400 mt-1">
-            Enter your Mobile No / Username & Password. Role is <strong>automatically detected</strong>!
+            Enter your Mobile Number or Login ID & Password to sign in.
           </p>
         </div>
 
-        {/* Quick Credentials Info Box */}
-        <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl text-[11px] text-slate-300 space-y-1">
-          <div className="font-bold text-teal-400 flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Automatic Role Detection:</span>
-          </div>
-          <div>• <strong>Electrician Login</strong>: 9876543210 | Pass: 123456</div>
-          <div>• <strong>Order Man Login</strong>: 9812345678 | Pass: order123</div>
-          <div>• <strong>Admin Login</strong>: admin@electro.in | Pass: admin123</div>
-        </div>
-
-        {/* Developer Bypass Option */}
-        <div className="bg-purple-500/10 border border-purple-500/30 p-3 rounded-xl flex items-center justify-between">
-          <div className="text-xs">
-            <span className="font-bold text-purple-300 block">Developer Bypass Mode</span>
-            <span className="text-[10px] text-slate-400 font-normal">Full privileges without password</span>
-          </div>
-          <button
-            type="button"
-            onClick={handleDeveloperBypass}
-            className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs"
-          >
-            Dev Access
-          </button>
-        </div>
-
         {errorMessage && (
-          <div className="bg-rose-500/10 border border-rose-500/30 p-3 rounded-xl text-rose-400 text-xs font-semibold">
+          <div className="bg-rose-500/10 border border-rose-500/30 p-3 rounded-xl text-rose-400 text-xs font-semibold text-center">
             {errorMessage}
           </div>
         )}
 
-        {/* Smart Single Login Form */}
+        {/* Clean Login Form without visible sample passwords */}
         <form onSubmit={handleSmartLogin} className="space-y-4 text-xs">
           <div>
             <label className="block text-slate-300 font-medium mb-1">
@@ -168,7 +152,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <input
                 type="text"
                 required
-                placeholder="e.g. 9876543210 or admin@electro.in"
+                placeholder="Enter mobile or username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full pl-9 pr-3 py-2.5 rounded-xl glass-input font-mono"
@@ -195,9 +179,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             type="submit"
             className="w-full py-3 rounded-xl bg-gradient-to-r from-teal-500 via-emerald-500 to-cyan-500 text-slate-950 font-extrabold text-xs transition-all shadow-lg shadow-teal-500/20 hover:brightness-110"
           >
-            Sign In (Auto Detect Role)
+            Sign In
           </button>
         </form>
+
+        {/* Quiet Developer Mode option */}
+        <div className="pt-2 text-center border-t border-slate-800">
+          <button
+            type="button"
+            onClick={handleDeveloperBypass}
+            className="text-[11px] text-purple-400 hover:text-purple-300 flex items-center justify-center gap-1 mx-auto font-medium"
+          >
+            <Code className="w-3.5 h-3.5" />
+            <span>Developer Mode Instant Access</span>
+          </button>
+        </div>
       </div>
     </div>
   );

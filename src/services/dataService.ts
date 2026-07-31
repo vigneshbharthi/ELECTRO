@@ -642,6 +642,68 @@ export const dataService = {
     return result;
   },
 
+  async updateClaim(id: string, updates: Partial<any>): Promise<any> {
+    try {
+      const { data, error } = await supabase.from('electrician_claims').update(updates).eq('id', id).select().single();
+      if (!error && data) {
+        const current = getLocal('claims', initialClaims);
+        setLocal('claims', current.map(c => c.id === id ? data : c));
+        return data;
+      }
+    } catch (e) {
+      console.warn('Supabase update claim error:', e);
+    }
+
+    const current = getLocal('claims', initialClaims);
+    let result = null;
+    const updated = current.map(c => {
+      if (c.id === id) {
+        result = { ...c, ...updates };
+        return result;
+      }
+      return c;
+    });
+    setLocal('claims', updated);
+    return result;
+  },
+
+  async deleteClaim(id: string): Promise<boolean> {
+    try {
+      const { error } = await supabase.from('electrician_claims').delete().eq('id', id);
+      if (!error) {
+        const current = getLocal('claims', initialClaims);
+        setLocal('claims', current.filter(c => c.id !== id));
+        return true;
+      }
+    } catch (e) {
+      console.warn('Supabase delete claim error:', e);
+    }
+
+    const current = getLocal('claims', initialClaims);
+    setLocal('claims', current.filter(c => c.id !== id));
+    return true;
+  },
+
+  // COMPANY PROFILE & CREDENTIALS SERVICE
+  getCompanyProfile(): any {
+    const defaultProfile = {
+      companyName: 'ELECTRO Electricals & Enterprise',
+      gstin: '33AAAAA0000A1Z5',
+      phone: '+91 9876543210',
+      email: 'support@electro.in',
+      address: '88 Main Bazaar, RS Puram, Coimbatore, TN - 641002',
+      adminUsername: 'admin@electro.in',
+      adminPassword: 'admin123',
+      devUsername: 'dev@electro.in',
+      devPassword: 'dev123'
+    };
+    return getLocal('company_profile', defaultProfile);
+  },
+
+  saveCompanyProfile(profile: any): void {
+    setLocal('company_profile', profile);
+  },
+
   // ORDER MAN CRUD SERVICES
   async getOrderMen(): Promise<OrderMan[]> {
     try {

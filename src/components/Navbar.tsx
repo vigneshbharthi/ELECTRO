@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Zap, Database, FileInput, BarChart3, Settings, ShieldAlert, Code, LogOut, CheckCircle2, ChevronDown, Users, Package, Receipt, Award, FileSpreadsheet, Sliders, UserCheck, Menu, X } from 'lucide-react';
+import { Zap, Database, FileInput, BarChart3, Settings, ShieldAlert, Code, LogOut, CheckCircle2, ChevronDown, Users, Package, Receipt, Award, FileSpreadsheet, Sliders, UserCheck, Menu, X, Building2 } from 'lucide-react';
 import { UserAuth } from '../types';
 
 interface NavbarProps {
@@ -82,7 +82,8 @@ export const Navbar: React.FC<NavbarProps> = ({
       label: 'Settings',
       icon: Settings,
       items: [
-        { id: 'app_settings', label: 'System & Points Config', icon: Sliders, desc: 'Bill-to-Points Ratio & Settings' }
+        { id: 'company_profile', label: 'Company Profile & Credentials', icon: Building2, desc: 'Company Info & Change Admin/Dev Passwords' },
+        { id: 'app_settings', label: 'System & Points Config', icon: Sliders, desc: 'Bill-to-Points Ratio & System Config' }
       ]
     }
   ];
@@ -202,20 +203,18 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* User Auth & Controls */}
           <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* Dev Mode Switch */}
-            <button
-              onClick={toggleDevMode}
-              title="Toggle Developer Full Access Auth Mode"
-              className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                auth.isDeveloperMode
-                  ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 hover:bg-purple-500/30'
-                  : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-purple-400'
-              }`}
-            >
-              <Code className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{auth.isDeveloperMode ? 'Dev Auth Active' : 'Dev Auth Mode'}</span>
-              {auth.isDeveloperMode && <CheckCircle2 className="w-3 h-3 text-purple-400 ml-1" />}
-            </button>
+            {/* Dev Mode Switch - VISIBLE ONLY FOR DEVELOPER */}
+            {(auth.userRole === 'developer' || auth.isDeveloperMode) && (
+              <button
+                onClick={toggleDevMode}
+                title="Toggle Developer Full Access Auth Mode"
+                className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all bg-purple-500/20 border-purple-500/50 text-purple-300 hover:bg-purple-500/30"
+              >
+                <Code className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Dev Auth Active</span>
+                <CheckCircle2 className="w-3 h-3 text-purple-400 ml-1" />
+              </button>
+            )}
 
             {/* Auth Login Status */}
             {auth.isAuthenticated ? (

@@ -100,3 +100,15 @@ export interface AppSettings {
   minBillAmount: number;
   appName: string;
 }
+
+export interface CompanyProfile {
+  companyName: string;
+  gstin: string;
+  phone: string;
+  email: string;
+  address: string;
+  adminUsername: string;
+  adminPassword: string;
+  devUsername: string;
+  devPassword: string;
+}
