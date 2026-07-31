@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS public.electrician_claims (
     remarks TEXT
 );
 
--- ROW LEVEL SECURITY POLICIES FOR DEMO / DEV ACCESS
+-- ENABLE ROW LEVEL SECURITY
 ALTER TABLE public.electricians ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_men ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
@@ -92,6 +92,15 @@ ALTER TABLE public.point_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.redemptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.electrician_claims ENABLE ROW LEVEL SECURITY;
 
+-- DROP POLICIES IF THEY ALREADY EXIST TO PREVENT 42710 DUPLICATE ERROR
+DROP POLICY IF EXISTS "Allow all access to electricians" ON public.electricians;
+DROP POLICY IF EXISTS "Allow all access to order_men" ON public.order_men;
+DROP POLICY IF EXISTS "Allow all access to products" ON public.products;
+DROP POLICY IF EXISTS "Allow all access to point_transactions" ON public.point_transactions;
+DROP POLICY IF EXISTS "Allow all access to redemptions" ON public.redemptions;
+DROP POLICY IF EXISTS "Allow all access to electrician_claims" ON public.electrician_claims;
+
+-- RE-CREATE RLS POLICIES FOR FULL DEMO ACCESS
 CREATE POLICY "Allow all access to electricians" ON public.electricians FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access to order_men" ON public.order_men FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access to products" ON public.products FOR ALL USING (true) WITH CHECK (true);
