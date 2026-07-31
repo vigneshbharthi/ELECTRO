@@ -24,7 +24,8 @@ export const BillEntryModule: React.FC<BillEntryModuleProps> = ({
 
   // Calculate points automatically from Bill Value (percentage basis)
   const numericAmount = Number(billAmount);
-  const calculatedPoints = Math.floor(numericAmount * (settings.pointsPercent / 100));
+  const pointsPercent = (settings.pointsPercent && !Number.isNaN(settings.pointsPercent)) ? settings.pointsPercent : 1;
+  const calculatedPoints = Math.floor(numericAmount * (pointsPercent / 100));
 
   const selectedElectrician = electricians.find(e => e.id === selectedElectricianId);
 

@@ -17,6 +17,8 @@ export const ElectricianClaimsApproval: React.FC<ElectricianClaimsApprovalProps>
   onUpdateClaimStatus,
   onSubmitClaim
 }) => {
+  // Normalize points percent so a malformed/legacy settings blob can never yield NaN points
+  const pointsPercent = (settings.pointsPercent && !Number.isNaN(settings.pointsPercent)) ? settings.pointsPercent : 1;
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [selectedInvoiceImage, setSelectedInvoiceImage] = useState<string | null>(null);
@@ -74,7 +76,7 @@ export const ElectricianClaimsApproval: React.FC<ElectricianClaimsApprovalProps>
       return;
     }
 
-    const claimedPts = Math.floor(numericAmount * (settings.pointsPercent / 100));
+    const claimedPts = Math.floor(numericAmount * (pointsPercent / 100));
 
     await onSubmitClaim({
       electrician_id: elec.id,

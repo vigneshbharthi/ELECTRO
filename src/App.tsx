@@ -22,11 +22,23 @@ export function App() {
 
   // App Settings & Company Profile
   const getInitialSettings = (): AppSettings => {
+    const defaults: AppSettings = { pointsPercent: 1, minBillAmount: 100, appName: 'ELECTRO' };
     try {
       const stored = localStorage.getItem('electro_app_settings');
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // Migrate legacy pointsPerRupee -> pointsPercent and guard against NaN
+        const pointsPercent = (typeof parsed.pointsPercent === 'number' && !Number.isNaN(parsed.pointsPercent))
+          ? parsed.pointsPercent
+          : (typeof parsed.pointsPerRupee === 'number' && parsed.pointsPerRupee > 0)
+            ? parsed.pointsPerRupee * 100  // 0.01 -> 1%
+            : defaults.pointsPercent;
+        const minBillAmount = (typeof parsed.minBillAmount === 'number') ? parsed.minBillAmount : defaults.minBillAmount;
+        const appName = parsed.appName || defaults.appName;
+        return { pointsPercent, minBillAmount, appName };
+      }
     } catch {}
-    return { pointsPercent: 1, minBillAmount: 100, appName: 'ELECTRO' };
+    return defaults;
   };
   const [settings, setSettings] = useState<AppSettings>(getInitialSettings);
 

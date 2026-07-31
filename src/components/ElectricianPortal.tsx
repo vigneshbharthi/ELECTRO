@@ -21,6 +21,9 @@ export const ElectricianPortal: React.FC<ElectricianPortalProps> = ({
   onUpdateClaim,
   onDeleteClaim
 }) => {
+  // Normalize points percent so a malformed/legacy settings blob can never yield NaN points
+  const pointsPercent = (settings.pointsPercent && !Number.isNaN(settings.pointsPercent)) ? settings.pointsPercent : 1;
+
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [editingClaim, setEditingClaim] = useState<ElectricianClaim | null>(null);
 
@@ -97,7 +100,7 @@ export const ElectricianPortal: React.FC<ElectricianPortalProps> = ({
     }
 
     setIsSubmitting(true);
-    const claimedPts = Math.floor(numericAmount * (settings.pointsPercent / 100));
+    const claimedPts = Math.floor(numericAmount * (pointsPercent / 100));
 
     await onSubmitClaim({
       electrician_id: electrician.id,
@@ -125,7 +128,7 @@ export const ElectricianPortal: React.FC<ElectricianPortalProps> = ({
       return;
     }
 
-    const claimedPts = Math.floor(numericAmount * (settings.pointsPercent / 100));
+    const claimedPts = Math.floor(numericAmount * (pointsPercent / 100));
 
     await onUpdateClaim(editingClaim.id, {
       bill_no: editBillNo,
@@ -386,7 +389,7 @@ export const ElectricianPortal: React.FC<ElectricianPortalProps> = ({
                 />
                 {Number(billAmount) > 0 && (
                   <p className="text-[11px] text-amber-400 mt-1 font-mono">
-                    Estimated Points Claimable: +{Math.floor(Number(billAmount) * (settings.pointsPercent / 100))} Points
+                    Estimated Points Claimable: +{Math.floor(Number(billAmount) * (pointsPercent / 100))} Points
                   </p>
                 )}
               </div>

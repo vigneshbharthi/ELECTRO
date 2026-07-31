@@ -16,14 +16,16 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
   setAuth
 }) => {
   const handlePercentChange = (percent: number) => {
-    if (percent <= 0) return;
+    if (!Number.isFinite(percent) || percent <= 0) return;
     setSettings(prev => ({
       ...prev,
       pointsPercent: percent
     }));
   };
 
-  const currentPercent = settings.pointsPercent;
+  const currentPercent = Number.isFinite(settings.pointsPercent) && settings.pointsPercent > 0
+    ? settings.pointsPercent
+    : 1;
 
   return (
     <div className="space-y-6">
