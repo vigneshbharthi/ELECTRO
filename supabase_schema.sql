@@ -136,3 +136,9 @@ VALUES
 ('Smart Modular Switch 16A 1-Way', 'Switches & Sockets', 'Nos', 195.00, NOW()),
 ('LED Panel Light 15W Round', 'Lighting Solutions', 'Nos', 320.00, NOW())
 ON CONFLICT DO NOTHING;
+
+-- SEED CLAIM FOR KARTHIK RAJA (INV-585643)
+INSERT INTO public.electrician_claims (electrician_id, electrician_name, electrician_mobile, bill_no, bill_amount, claimed_points, status, submitted_date, remarks)
+SELECT id, name, mobile, 'INV-585643', 18500.00, 185, 'pending', NOW(), 'Wiring & switchgear materials bill receipt'
+FROM public.electricians WHERE mobile = '9876543210'
+ON CONFLICT DO NOTHING;

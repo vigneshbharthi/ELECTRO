@@ -198,9 +198,23 @@ const initialClaims: any[] = [
     bill_amount: 15000,
     claimed_points: 150,
     invoice_image_url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=60',
+    status: 'approved',
+    submitted_date: new Date(Date.now() - 4 * 86400000).toISOString(),
+    processed_date: new Date(Date.now() - 3 * 86400000).toISOString(),
+    remarks: 'Verified invoice copy'
+  },
+  {
+    id: 'c102-inv-585643',
+    electrician_id: 'e101-uuid-001',
+    electrician_name: 'Karthik Raja',
+    electrician_mobile: '9876543210',
+    bill_no: 'INV-585643',
+    bill_amount: 18500,
+    claimed_points: 185,
     status: 'pending',
-    submitted_date: new Date(Date.now() - 1 * 86400000).toISOString(),
-    remarks: 'Commercial building wiring materials invoice copy'
+    submitted_date: new Date().toISOString(),
+    remarks: 'Wiring & switchgear materials bill receipt',
+    invoice_image_url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=60'
   },
   {
     id: 'c102',
@@ -560,16 +574,30 @@ export const dataService = {
 
   // ELECTRICIAN POINT CLAIMS APPROVAL SERVICES
   async getClaims(): Promise<any[]> {
+    let supabaseClaims: any[] = [];
     try {
       const { data, error } = await supabase.from('electrician_claims').select('*').order('submitted_date', { ascending: false });
-      if (!error && data && data.length > 0) {
-        setLocal('claims', data);
-        return data;
+      if (!error && data) {
+        supabaseClaims = data;
       }
     } catch (e) {
       console.warn('Supabase get claims error:', e);
     }
-    return getLocal('claims', initialClaims);
+
+    const localClaims = getLocal('claims', initialClaims);
+    const map = new Map();
+    [...supabaseClaims, ...localClaims].forEach(item => {
+      if (item && (item.id || item.bill_no)) {
+        const key = item.id || item.bill_no;
+        if (!map.has(key)) {
+          map.set(key, item);
+        }
+      }
+    });
+
+    const merged = Array.from(map.values()).sort((a, b) => new Date(b.submitted_date || 0).getTime() - new Date(a.submitted_date || 0).getTime());
+    setLocal('claims', merged);
+    return merged;
   },
 
   async submitClaim(claim: Omit<any, 'id' | 'status' | 'submitted_date'>): Promise<any> {
