@@ -112,3 +112,12 @@ CREATE POLICY "Allow all access to products" ON public.products FOR ALL USING (t
 CREATE POLICY "Allow all access to point_transactions" ON public.point_transactions FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access to redemptions" ON public.redemptions FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access to electrician_claims" ON public.electrician_claims FOR ALL USING (true) WITH CHECK (true);
+
+-- GRANT PRIVILEGES TO ANON ROLE (REQUIRED - RLS policies alone are not enough)
+GRANT USAGE ON SCHEMA public TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.electricians TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.order_men TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.products TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.point_transactions TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.redemptions TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.electrician_claims TO anon;
