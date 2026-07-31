@@ -68,10 +68,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
     }
 
-    // 3. Check if Electrician (lookup by mobile or email)
-    const elec = electricians.find(e => e.mobile === inputClean || (e.email && e.email.toLowerCase() === inputClean.toLowerCase()) || e.name.toLowerCase() === inputClean.toLowerCase());
+    const inputMobileClean = inputClean.replace(/\D/g, '');
+
+    // 3. Check if Electrician (lookup by mobile digits, email, or name)
+    const elec = electricians.find(e => {
+      const eMobileClean = (e.mobile || '').replace(/\D/g, '');
+      const isMobileMatch = inputMobileClean.length >= 7 && eMobileClean === inputMobileClean;
+      const isRawMobileMatch = e.mobile.trim() === inputClean;
+      const isEmailMatch = Boolean(e.email && e.email.toLowerCase() === inputClean.toLowerCase());
+      const isNameMatch = Boolean(e.name && e.name.toLowerCase() === inputClean.toLowerCase());
+      return isMobileMatch || isRawMobileMatch || isEmailMatch || isNameMatch;
+    });
+
     if (elec) {
-      if (elec.password === passClean || passClean === '123456') {
+      const elecPass = (elec.password || '123456').trim();
+      if (elecPass === passClean || passClean === elecPass || passClean === '123456') {
         setAuth({
           isAuthenticated: true,
           isDeveloperMode: false,
@@ -85,10 +96,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
     }
 
-    // 4. Check if Order Man (lookup by mobile or email)
-    const om = orderMen.find(o => o.mobile === inputClean || (o.email && o.email.toLowerCase() === inputClean.toLowerCase()) || o.name.toLowerCase() === inputClean.toLowerCase());
+    // 4. Check if Order Man (lookup by mobile digits, email, or name)
+    const om = orderMen.find(o => {
+      const oMobileClean = (o.mobile || '').replace(/\D/g, '');
+      const isMobileMatch = inputMobileClean.length >= 7 && oMobileClean === inputMobileClean;
+      const isRawMobileMatch = o.mobile.trim() === inputClean;
+      const isEmailMatch = Boolean(o.email && o.email.toLowerCase() === inputClean.toLowerCase());
+      const isNameMatch = Boolean(o.name && o.name.toLowerCase() === inputClean.toLowerCase());
+      return isMobileMatch || isRawMobileMatch || isEmailMatch || isNameMatch;
+    });
+
     if (om) {
-      if (om.password === passClean || passClean === 'order123') {
+      const omPass = (om.password || 'order123').trim();
+      if (omPass === passClean || passClean === omPass || passClean === 'order123') {
         setAuth({
           isAuthenticated: true,
           isDeveloperMode: false,

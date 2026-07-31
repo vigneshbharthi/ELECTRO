@@ -31,16 +31,30 @@ const setLocal = <T>(key: string, value: T): void => {
 export const dataService = {
   // ELECTRICIANS
   async getElectricians(): Promise<Electrician[]> {
+    let supabaseElecs: Electrician[] = [];
     try {
       const { data, error } = await supabase.from('electricians').select('*').order('created_at', { ascending: false });
-      if (!error && data && data.length > 0) {
-        setLocal('electricians', data);
-        return data as Electrician[];
+      if (!error && data) {
+        supabaseElecs = data as Electrician[];
       }
     } catch (e) {
       console.warn('Supabase fetch failed, fallback to local:', e);
     }
-    return getLocal('electricians', initialElectricians);
+
+    const localElecs = getLocal<Electrician[]>('electricians', initialElectricians);
+    const map = new Map<string, Electrician>();
+    [...supabaseElecs, ...localElecs].forEach(item => {
+      if (item && (item.id || item.mobile)) {
+        const key = item.mobile || item.id;
+        if (!map.has(key)) {
+          map.set(key, item);
+        }
+      }
+    });
+
+    const merged = Array.from(map.values());
+    setLocal('electricians', merged);
+    return merged;
   },
 
   async addElectrician(electrician: Omit<Electrician, 'id' | 'points_balance' | 'created_at' | 'updated_at'>): Promise<Electrician> {
@@ -512,16 +526,30 @@ export const dataService = {
 
   // ORDER MAN CRUD SERVICES
   async getOrderMen(): Promise<OrderMan[]> {
+    let supabaseOMs: OrderMan[] = [];
     try {
       const { data, error } = await supabase.from('order_men').select('*').order('created_at', { ascending: false });
-      if (!error && data && data.length > 0) {
-        setLocal('order_men', data);
-        return data as OrderMan[];
+      if (!error && data) {
+        supabaseOMs = data as OrderMan[];
       }
     } catch (e) {
       console.warn('Supabase get order men error:', e);
     }
-    return getLocal('order_men', initialOrderMen);
+
+    const localOMs = getLocal<OrderMan[]>('order_men', initialOrderMen);
+    const map = new Map<string, OrderMan>();
+    [...supabaseOMs, ...localOMs].forEach(item => {
+      if (item && (item.id || item.mobile)) {
+        const key = item.mobile || item.id;
+        if (!map.has(key)) {
+          map.set(key, item);
+        }
+      }
+    });
+
+    const merged = Array.from(map.values());
+    setLocal('order_men', merged);
+    return merged;
   },
 
   async addOrderMan(om: Omit<OrderMan, 'id' | 'created_at' | 'updated_at'>): Promise<OrderMan> {
