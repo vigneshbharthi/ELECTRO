@@ -201,7 +201,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {auth.username} <span className="text-[10px] text-teal-400 font-mono">({auth.userRole})</span>
                 </span>
                 <button
-                  onClick={() => { localStorage.removeItem('electro_auth'); setAuth({ isAuthenticated: false, isDeveloperMode: false, userRole: 'guest', username: 'Guest' }); }}
+                  onClick={() => { localStorage.removeItem('jbs_electro_auth'); setAuth({ isAuthenticated: false, isDeveloperMode: false, userRole: 'guest', username: 'Guest' }); }}
                   className="text-slate-400 hover:text-red-400 p-1"
                   title="Logout"
                 >

@@ -12,7 +12,7 @@ const initialClaims: any[] = [];
 // Helper functions for LocalStorage
 const getLocal = <T>(key: string, fallback: T): T => {
   try {
-    const data = localStorage.getItem(`electro_${key}`);
+    const data = localStorage.getItem(`jbs_electro_${key}`);
     return data ? JSON.parse(data) : fallback;
   } catch {
     return fallback;
@@ -21,7 +21,7 @@ const getLocal = <T>(key: string, fallback: T): T => {
 
 const setLocal = <T>(key: string, value: T): void => {
   try {
-    localStorage.setItem(`electro_${key}`, JSON.stringify(value));
+    localStorage.setItem(`jbs_electro_${key}`, JSON.stringify(value));
   } catch (e) {
     console.error('LocalStorage write error:', e);
   }
@@ -525,7 +525,7 @@ export const dataService = {
   // COMPANY PROFILE & CREDENTIALS SERVICE
   getCompanyProfile(): any {
     const defaultProfile = {
-      companyName: 'ELECTRO Electricals & Enterprise',
+      companyName: 'JBS Electro',
       gstin: '33AAAAA0000A1Z5',
       phone: '+91 9876543210',
       email: 'support@electro.in',
@@ -550,7 +550,7 @@ export const dataService = {
         return {
           pointsPercent: Number(data.points_percent) || 1,
           minBillAmount: Number(data.min_bill_amount) || 100,
-          appName: data.app_name || 'ELECTRO'
+          appName: data.app_name || 'JBS Electro'
         };
       }
     } catch (e) {

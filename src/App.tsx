@@ -22,9 +22,9 @@ export function App() {
 
   // App Settings & Company Profile
   const getInitialSettings = (): AppSettings => {
-    const defaults: AppSettings = { pointsPercent: 1, minBillAmount: 100, appName: 'ELECTRO' };
+    const defaults: AppSettings = { pointsPercent: 1, minBillAmount: 100, appName: 'JBS Electro' };
     try {
-      const stored = localStorage.getItem('electro_app_settings');
+      const stored = localStorage.getItem('jbs_electro_app_settings');
       if (stored) {
         const parsed = JSON.parse(stored);
         // Migrate legacy pointsPerRupee -> pointsPercent and guard against NaN
@@ -45,7 +45,7 @@ export function App() {
   // Persist settings to localStorage on every change
   useEffect(() => {
     try {
-      localStorage.setItem('electro_app_settings', JSON.stringify(settings));
+      localStorage.setItem('jbs_electro_app_settings', JSON.stringify(settings));
     } catch {}
     // Push to Supabase if current user is admin/developer (so electrician devices sync)
     if (auth.userRole === 'admin' || auth.userRole === 'developer') {
@@ -59,7 +59,7 @@ export function App() {
       const supabaseSettings = await dataService.getAppSettings();
       if (supabaseSettings) {
         setSettings(supabaseSettings);
-        localStorage.setItem('electro_app_settings', JSON.stringify(supabaseSettings));
+        localStorage.setItem('jbs_electro_app_settings', JSON.stringify(supabaseSettings));
       }
     } catch (e) {
       console.warn('App settings Supabase sync skipped:', e);
@@ -85,7 +85,7 @@ export function App() {
   // User Auth State - Persisted in localStorage so login survives page refresh
   const getInitialAuth = (): UserAuth => {
     try {
-      const stored = localStorage.getItem('electro_auth');
+      const stored = localStorage.getItem('jbs_electro_auth');
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed && parsed.isAuthenticated) return parsed;
@@ -99,16 +99,16 @@ export function App() {
   useEffect(() => {
     try {
       if (auth.isAuthenticated) {
-        localStorage.setItem('electro_auth', JSON.stringify(auth));
+        localStorage.setItem('jbs_electro_auth', JSON.stringify(auth));
       } else {
-        localStorage.removeItem('electro_auth');
+        localStorage.removeItem('jbs_electro_auth');
       }
     } catch {}
   }, [auth]);
 
   // Clear persisted auth on explicit logout
   const handleLogout = () => {
-    localStorage.removeItem('electro_auth');
+    localStorage.removeItem('jbs_electro_auth');
     setAuth({ isAuthenticated: false, isDeveloperMode: false, userRole: 'guest', username: 'Guest' });
   };
 
@@ -423,7 +423,7 @@ export function App() {
       <footer className="border-t border-slate-800/80 bg-slate-950 py-4 text-center text-xs text-slate-500 no-print">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
           <div>
-            <strong>ELECTRO Enterprise ERP Portal</strong> • Role-based Access System
+            <strong>JBS Electro Enterprise ERP Portal</strong> • Role-based Access System
           </div>
           <div className="flex items-center space-x-3 text-[11px]">
             <a

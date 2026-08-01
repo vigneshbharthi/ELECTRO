@@ -1,4 +1,4 @@
--- ELECTRO FRESH PRODUCTION DATABASE SCHEMA FOR SUPABASE
+-- JBS Electro Fresh Production Database Schema FOR SUPABASE
 -- Run this script in your Supabase SQL Editor: https://optvzsdieukdqsrcxdzm.supabase.co
 
 -- DROP EXISTING TABLES AND POLICIES FOR CLEAN RESET
@@ -97,13 +97,13 @@ CREATE TABLE public.app_settings (
     id INT PRIMARY KEY DEFAULT 1,
     points_percent NUMERIC(5, 2) NOT NULL DEFAULT 1.00,
     min_bill_amount INTEGER NOT NULL DEFAULT 100,
-    app_name TEXT NOT NULL DEFAULT 'ELECTRO',
+    app_name TEXT NOT NULL DEFAULT 'JBS Electro',
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- INSERT THE DEFAULT SETTINGS ROW IF IT DOES NOT EXIST
 INSERT INTO public.app_settings (id, points_percent, min_bill_amount, app_name)
-VALUES (1, 1.00, 100, 'ELECTRO')
+VALUES (1, 1.00, 100, 'JBS Electro')
 ON CONFLICT (id) DO NOTHING;
 
 -- ENABLE ROW LEVEL SECURITY

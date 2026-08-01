@@ -105,7 +105,7 @@ const CreateAdminManager: React.FC<{
   onCreate: (profile: CompanyProfile) => void;
 }> = ({ onCreate }) => {
   const [form, setForm] = useState({
-    companyName: 'ELECTRO Electricals & Enterprise',
+    companyName: 'JBS Electro',
     gstin: '',
     phone: '',
     email: '',
@@ -125,7 +125,7 @@ const CreateAdminManager: React.FC<{
       return;
     }
     const profile: CompanyProfile = {
-      companyName: form.companyName.trim() || 'ELECTRO',
+      companyName: form.companyName.trim() || 'JBS Electro',
       gstin: form.gstin,
       phone: form.phone,
       email: form.email,
