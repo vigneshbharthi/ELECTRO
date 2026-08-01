@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Settings, Sliders, Database, Save, CheckCircle2, ShieldCheck, UserPlus, Key } from 'lucide-react';
+import { Settings, Sliders, Database, Save, CheckCircle2, ShieldCheck, UserPlus, Key, RefreshCw, CloudUpload } from 'lucide-react';
 import { AppSettings, UserAuth, CompanyProfile } from '../types';
+import { dataService } from '../services/dataService';
 
 interface SettingsModuleProps {
   settings: AppSettings;
@@ -198,6 +199,8 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
     Number.isFinite(settings.pointsPercent) && settings.pointsPercent > 0 ? settings.pointsPercent : 1
   );
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
 
   const handleSave = () => {
     if (!Number.isFinite(percentDraft) || percentDraft <= 0 || percentDraft > 100) {
@@ -212,6 +215,35 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
   const currentPercent = Number.isFinite(settings.pointsPercent) && settings.pointsPercent > 0
     ? settings.pointsPercent
     : 1;
+
+  const handleSyncLocalToCloud = async () => {
+    if (!confirm('Push all local-only data (electricians, order men, products, claims, transactions, redemptions) to Supabase cloud? Other devices will then see this data after refresh.')) return;
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const r = await dataService.syncLocalToCloud();
+      const pushed = r.electricians + r.orderMen + r.products + r.claims + r.transactions + r.redemptions;
+      if (pushed === 0) {
+        setSyncResult('No new local records to sync — everything is already in cloud.');
+      } else {
+        let msg = `Synced ${pushed} record(s) to cloud:\n`;
+        if (r.electricians) msg += `  • Electricians: ${r.electricians}\n`;
+        if (r.orderMen) msg += `  • Order Men: ${r.orderMen}\n`;
+        if (r.products) msg += `  • Products: ${r.products}\n`;
+        if (r.claims) msg += `  • Claims: ${r.claims}\n`;
+        if (r.transactions) msg += `  • Transactions: ${r.transactions}\n`;
+        if (r.redemptions) msg += `  • Redemptions: ${r.redemptions}\n`;
+        setSyncResult(msg.trim());
+      }
+      if (r.errors.length > 0) {
+        setSyncResult(prev => (prev ? prev + '\n' : '') + 'Errors: ' + r.errors.join('; '));
+      }
+    } catch (e: any) {
+      setSyncResult('Sync failed: ' + (e?.message || 'unknown error'));
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -308,6 +340,33 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
             </h3>
 
             <CreateAdminManager onCreate={onSaveCompanyProfile} />
+          </div>
+        )}
+
+        {/* Local->Cloud Migration (admin/dev only) */}
+        {auth.userRole !== 'guest' && (
+          <div className="glass-panel p-6 rounded-2xl space-y-4">
+            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2 border-b border-slate-800 pb-3">
+              <CloudUpload className="w-5 h-5 text-amber-400" />
+              Sync Local Data to Cloud
+            </h3>
+            <p className="text-xs text-slate-400">
+              Pushes any records that exist only in this browser's local storage to Supabase. Needed if you created data before the cloud connection was fixed, so other devices can see it.
+            </p>
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleSyncLocalToCloud}
+                disabled={syncing}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold text-xs hover:brightness-110 disabled:opacity-60"
+              >
+                <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                <span>{syncing ? 'Syncing...' : 'Sync Now'}</span>
+              </button>
+              {syncResult && (
+                <pre className="text-[11px] text-slate-300 bg-slate-900 border border-slate-800 rounded-xl p-3 max-w-md whitespace-pre-wrap font-mono">{syncResult}</pre>
+              )}
+            </div>
           </div>
         )}
 

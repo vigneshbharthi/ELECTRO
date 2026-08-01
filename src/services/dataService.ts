@@ -667,6 +667,45 @@ export const dataService = {
     const current = getLocal<OrderMan[]>('order_men', initialOrderMen);
     setLocal('order_men', current.filter(om => om.id !== id));
     return true;
+  },
+
+  // ONE-TIME LOCAL -> SUPABASE MIGRATION (call from Settings page)
+  // Pushes any local-only records to Supabase so other devices can see them.
+  async syncLocalToCloud(): Promise<{ electricians: number; orderMen: number; products: number; claims: number; transactions: number; redemptions: number; errors: string[] }> {
+    const result = { electricians: 0, orderMen: 0, products: 0, claims: 0, transactions: 0, redemptions: 0, errors: [] as string[] };
+
+    const push = async (table: string, records: any[], matchKey: string) => {
+      if (!records || records.length === 0) return;
+      try {
+        // Fetch existing keys from Supabase to avoid duplicate inserts
+        const { data: existing } = await supabase.from(table).select(matchKey);
+        const existingKeys = new Set((existing || []).map((r: any) => r[matchKey]));
+        const toInsert = records.filter(r => r && r[matchKey] && !existingKeys.has(r[matchKey]));
+        if (toInsert.length === 0) return;
+        const { error } = await supabase.from(table).insert(toInsert);
+        if (error) {
+          result.errors.push(`${table}: ${error.message}`);
+        } else {
+          if (table === 'electricians') result.electricians += toInsert.length;
+          if (table === 'order_men') result.orderMen += toInsert.length;
+          if (table === 'products') result.products += toInsert.length;
+          if (table === 'electrician_claims') result.claims += toInsert.length;
+          if (table === 'point_transactions') result.transactions += toInsert.length;
+          if (table === 'redemptions') result.redemptions += toInsert.length;
+        }
+      } catch (e: any) {
+        result.errors.push(`${table}: ${e?.message || 'unknown error'}`);
+      }
+    };
+
+    await push('electricians', getLocal<Electrician[]>('electricians', []), 'mobile');
+    await push('order_men', getLocal<OrderMan[]>('order_men', []), 'mobile');
+    await push('products', getLocal<Product[]>('products', []), 'id');
+    await push('electrician_claims', getLocal<any[]>('claims', []), 'id');
+    await push('point_transactions', getLocal<PointTransaction[]>('transactions', []), 'id');
+    await push('redemptions', getLocal<Redemption[]>('redemptions', []), 'id');
+
+    return result;
   }
 };
 
