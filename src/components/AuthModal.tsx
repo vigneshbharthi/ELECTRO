@@ -107,6 +107,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     // If Electrician exists, authenticate - strict password match only (no universal backdoor passwords)
     if (elec) {
+      if (elec.status === 'inactive') {
+        setErrorMessage('Your account is inactive. Please contact the admin.');
+        setIsLoading(false);
+        return;
+      }
       const elecPass = (elec.password || '123456').trim();
       if (elecPass !== '' && passClean === elecPass) {
         setAuth({

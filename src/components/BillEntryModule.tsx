@@ -121,7 +121,7 @@ export const BillEntryModule: React.FC<BillEntryModuleProps> = ({
                   onChange={(e) => setSelectedElectricianId(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl glass-input"
                 >
-                  {electricians.map(e => (
+                  {electricians.filter(e => e.status !== 'inactive').map(e => (
                     <option key={e.id} value={e.id} className="bg-slate-900 text-slate-200">
                       {e.name} ({e.mobile}) - Current: {e.points_balance} Pts
                     </option>

@@ -22,9 +22,13 @@ CREATE TABLE public.electricians (
     pincode TEXT NOT NULL,
     experience INTEGER NOT NULL DEFAULT 0,
     points_balance INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL CHECK (status IN ('active', 'inactive')) DEFAULT 'active',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Migrate existing databases (idempotent)
+ALTER TABLE public.electricians ADD COLUMN IF NOT EXISTS status TEXT NOT NULL CHECK (status IN ('active', 'inactive')) DEFAULT 'active';
 
 -- 2. ORDER MEN TABLE (SALES PERSONNEL - NO SAMPLE DATA)
 CREATE TABLE public.order_men (

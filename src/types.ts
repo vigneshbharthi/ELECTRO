@@ -10,6 +10,7 @@ export interface Electrician {
   experience: number; // in years
   password?: string; // Login password for Electrician Portal
   points_balance: number;
+  status?: 'active' | 'inactive'; // Login allowed only when 'active'
   created_at?: string;
   updated_at?: string;
 }

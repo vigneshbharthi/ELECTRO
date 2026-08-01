@@ -309,7 +309,7 @@ export const ElectricianClaimsApproval: React.FC<ElectricianClaimsApprovalProps>
                   onChange={(e) => setSelectedElectricianId(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl glass-input font-bold"
                 >
-                  {electricians.map(elec => (
+                  {electricians.filter(elec => elec.status !== 'inactive').map(elec => (
                     <option key={elec.id} value={elec.id} className="bg-slate-900 text-slate-200">
                       {elec.name} ({elec.mobile})
                     </option>

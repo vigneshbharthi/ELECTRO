@@ -157,7 +157,7 @@ export function App() {
   };
 
   // ELECTRICIANS HANDLERS
-  const handleAddElectrician = async (data: Omit<Electrician, 'id' | 'points_balance' | 'created_at' | 'updated_at'>) => {
+  const handleAddElectrician = async (data: Omit<Electrician, 'id' | 'points_balance' | 'status' | 'created_at' | 'updated_at'>) => {
     await dataService.addElectrician(data);
     await loadData();
   };
@@ -167,8 +167,14 @@ export function App() {
     await loadData();
   };
 
-  const handleDeleteElectrician = async (id: string) => {
-    await dataService.deleteElectrician(id);
+  const handleGetElectricianRelatedCounts = (id: string) => ({
+    claims: claims.filter(c => c.electrician_id === id).length,
+    transactions: transactions.filter(t => t.electrician_id === id).length,
+    redemptions: redemptions.filter(r => r.electrician_id === id).length
+  });
+
+  const handleDeleteElectrician = async (id: string, clearRecords?: boolean) => {
+    await dataService.deleteElectrician(id, clearRecords);
     await loadData();
   };
 
@@ -333,6 +339,7 @@ export function App() {
                     onAdd={handleAddElectrician}
                     onUpdate={handleUpdateElectrician}
                     onDelete={handleDeleteElectrician}
+                    onGetRelatedCounts={handleGetElectricianRelatedCounts}
                     onViewLedger={handleViewLedgerForElectrician}
                   />
                 )}

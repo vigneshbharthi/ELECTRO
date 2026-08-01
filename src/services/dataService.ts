@@ -57,11 +57,12 @@ export const dataService = {
     return merged;
   },
 
-  async addElectrician(electrician: Omit<Electrician, 'id' | 'points_balance' | 'created_at' | 'updated_at'>): Promise<Electrician> {
+  async addElectrician(electrician: Omit<Electrician, 'id' | 'points_balance' | 'status' | 'created_at' | 'updated_at'>): Promise<Electrician> {
     const newElectrician: Electrician = {
       ...electrician,
       id: crypto.randomUUID ? crypto.randomUUID() : `elec-${Date.now()}`,
       points_balance: 0,
+      status: 'active',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -110,7 +111,25 @@ export const dataService = {
     return updatedItem;
   },
 
-  async deleteElectrician(id: string): Promise<boolean> {
+  async deleteElectrician(id: string, clearRecords: boolean = false): Promise<boolean> {
+    // When clearRecords is true, also remove the electrician's claims, transactions and redemptions.
+    // Otherwise those orphaned records remain (audit trail preserved).
+    if (clearRecords) {
+      try {
+        await supabase.from('electrician_claims').delete().eq('electrician_id', id);
+        await supabase.from('point_transactions').delete().eq('electrician_id', id);
+        await supabase.from('redemptions').delete().eq('electrician_id', id);
+      } catch (e) {
+        console.warn('Supabase cascade delete failed:', e);
+      }
+      const claimsLocal = getLocal<any[]>('claims', initialClaims);
+      setLocal('claims', claimsLocal.filter(c => c.electrician_id !== id));
+      const txLocal = getLocal<PointTransaction[]>('transactions', initialTransactions);
+      setLocal('transactions', txLocal.filter(t => t.electrician_id !== id));
+      const redLocal = getLocal<Redemption[]>('redemptions', initialRedemptions);
+      setLocal('redemptions', redLocal.filter(r => r.electrician_id !== id));
+    }
+
     try {
       const { error } = await supabase.from('electricians').delete().eq('id', id);
       if (!error) {

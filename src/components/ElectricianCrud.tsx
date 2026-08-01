@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Plus, Search, Edit2, Trash2, UserCheck, Calendar, Phone, Mail, MapPin, Briefcase, Award, X, Check, FileSpreadsheet } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, UserCheck, Calendar, Phone, Mail, MapPin, Briefcase, Award, X, FileSpreadsheet } from 'lucide-react';
 import { Electrician } from '../types';
 
 interface ElectricianCrudProps {
   electricians: Electrician[];
-  onAdd: (data: Omit<Electrician, 'id' | 'points_balance' | 'created_at' | 'updated_at'>) => Promise<void>;
+  onAdd: (data: Omit<Electrician, 'id' | 'points_balance' | 'status' | 'created_at' | 'updated_at'>) => Promise<void>;
   onUpdate: (id: string, updates: Partial<Electrician>) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
+  onDelete: (id: string, clearRecords?: boolean) => Promise<void>;
+  onGetRelatedCounts: (id: string) => { claims: number; transactions: number; redemptions: number };
   onViewLedger: (electricianId: string) => void;
 }
 
@@ -15,12 +16,15 @@ export const ElectricianCrud: React.FC<ElectricianCrudProps> = ({
   onAdd,
   onUpdate,
   onDelete,
+  onGetRelatedCounts,
   onViewLedger
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingElectrician, setEditingElectrician] = useState<Electrician | null>(null);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+  const [deleteClearRecords, setDeleteClearRecords] = useState(false);
+  const [deleteCounts, setDeleteCounts] = useState<{ claims: number; transactions: number; redemptions: number } | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -83,8 +87,21 @@ export const ElectricianCrud: React.FC<ElectricianCrudProps> = ({
   };
 
   const handleDeleteConfirm = async (id: string) => {
-    await onDelete(id);
+    await onDelete(id, deleteClearRecords);
     setIsDeletingId(null);
+    setDeleteClearRecords(false);
+    setDeleteCounts(null);
+  };
+
+  const handleRequestDelete = (id: string) => {
+    setDeleteClearRecords(false);
+    setDeleteCounts(onGetRelatedCounts(id));
+    setIsDeletingId(id);
+  };
+
+  const handleToggleStatus = async (elec: Electrician) => {
+    const next = elec.status === 'inactive' ? 'active' : 'inactive';
+    await onUpdate(elec.id, { status: next });
   };
 
   const filteredElectricians = electricians.filter(e =>
@@ -153,6 +170,11 @@ export const ElectricianCrud: React.FC<ElectricianCrudProps> = ({
                   <div>
                     <h3 className="text-base font-bold text-slate-100 flex items-center gap-1.5">
                       {elec.name}
+                      {elec.status === 'inactive' && (
+                        <span className="px-1.5 py-0.5 rounded-md text-[9px] font-extrabold uppercase bg-slate-700/60 text-slate-300 border border-slate-600">
+                          Inactive
+                        </span>
+                      )}
                     </h3>
                     <p className="text-xs text-slate-400">
                       S/O: <span className="text-slate-300 font-medium">{elec.father_name}</span>
@@ -207,6 +229,18 @@ export const ElectricianCrud: React.FC<ElectricianCrudProps> = ({
 
                 <div className="flex items-center gap-2">
                   <button
+                    onClick={() => handleToggleStatus(elec)}
+                    className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition-colors ${
+                      elec.status === 'inactive'
+                        ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                        : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30'
+                    }`}
+                    title={elec.status === 'inactive' ? 'Activate Electrician' : 'Deactivate Electrician'}
+                  >
+                    {elec.status === 'inactive' ? 'Activate' : 'Deactivate'}
+                  </button>
+
+                  <button
                     onClick={() => openEditModal(elec)}
                     className="p-1.5 rounded-lg text-slate-400 hover:text-teal-300 hover:bg-slate-800 transition-colors"
                     title="Edit Details"
@@ -215,25 +249,58 @@ export const ElectricianCrud: React.FC<ElectricianCrudProps> = ({
                   </button>
 
                   {isDeletingId === elec.id ? (
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleDeleteConfirm(elec.id)}
-                        className="p-1.5 rounded-lg text-red-400 bg-red-500/20 hover:bg-red-500/30"
-                        title="Confirm Delete"
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm" onClick={() => setIsDeletingId(null)}>
+                      <div
+                        className="glass-panel w-full max-w-sm rounded-2xl p-5 relative border border-slate-700 shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <Check className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setIsDeletingId(null)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-800"
-                        title="Cancel"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+                        <h4 className="font-bold text-slate-100 text-sm">Delete {elec.name}?</h4>
+                        {deleteCounts && (deleteCounts.claims > 0 || deleteCounts.transactions > 0 || deleteCounts.redemptions > 0) ? (
+                          <div className="mt-3 space-y-2">
+                            <p className="text-xs text-slate-300">
+                              This electrician has:
+                            </p>
+                            <ul className="text-[11px] text-slate-400 space-y-1">
+                              <li>• {deleteCounts.claims} bill claim(s)</li>
+                              <li>• {deleteCounts.transactions} ledger transaction(s)</li>
+                              <li>• {deleteCounts.redemptions} redemption request(s)</li>
+                            </ul>
+                            <label className="flex items-start gap-2 mt-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={deleteClearRecords}
+                                onChange={(e) => setDeleteClearRecords(e.target.checked)}
+                                className="mt-0.5"
+                              />
+                              <span className="text-[11px] text-rose-300 font-semibold">
+                                Also permanently clear all these records. <span className="text-rose-400/80 font-normal">This removes the audit trail & point history — cannot be undone.</span>
+                              </span>
+                            </label>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-slate-400 mt-2">
+                            No claims, transactions or redemptions linked — safe to delete.
+                          </p>
+                        )}
+                        <div className="flex justify-end gap-2 mt-5">
+                          <button
+                            onClick={() => { setIsDeletingId(null); setDeleteClearRecords(false); setDeleteCounts(null); }}
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-800"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => handleDeleteConfirm(elec.id)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-extrabold text-white ${deleteCounts && (deleteCounts.claims > 0 || deleteCounts.transactions > 0 || deleteCounts.redemptions > 0) && !deleteClearRecords ? 'bg-slate-600' : 'bg-rose-600 hover:bg-rose-500'}`}
+                          >
+                            {deleteCounts && (deleteCounts.claims > 0 || deleteCounts.transactions > 0 || deleteCounts.redemptions > 0) && !deleteClearRecords ? 'Delete Profile Only' : 'Delete'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <button
-                      onClick={() => setIsDeletingId(elec.id)}
+                      onClick={() => handleRequestDelete(elec.id)}
                       className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors"
                       title="Delete Electrician"
                     >
