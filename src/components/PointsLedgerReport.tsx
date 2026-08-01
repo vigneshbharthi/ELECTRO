@@ -98,7 +98,7 @@ export const PointsLedgerReport: React.FC<PointsLedgerReportProps> = ({
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `ELECTRO_Points_Ledger_${selectedElectricianId}_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `JBS_Electro_Points_Ledger_${selectedElectricianId}_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -254,7 +254,7 @@ export const PointsLedgerReport: React.FC<PointsLedgerReportProps> = ({
 
       {/* Printable Statement Title */}
       <div className="hidden print-only mb-4">
-        <h1 className="text-2xl font-bold">ELECTRO - Points Statement Ledger</h1>
+        <h1 className="text-2xl font-bold">JBS Electro - Points Statement Ledger</h1>
         {currentElectrician && (
           <p className="text-sm">
             Electrician: {currentElectrician.name} | Mobile: {currentElectrician.mobile} | Address: {currentElectrician.address} ({currentElectrician.pincode})

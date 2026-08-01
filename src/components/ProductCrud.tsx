@@ -128,7 +128,7 @@ export const ProductCrud: React.FC<ProductCrudProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'ELECTRO_Product_Import_Sample.csv';
+    a.download = 'JBS_Electro_Product_Import_Sample.csv';
     a.click();
   };
 

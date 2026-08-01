@@ -106,7 +106,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <div>
               <span className="text-xl font-extrabold tracking-wider bg-gradient-to-r from-teal-400 via-emerald-300 to-cyan-400 bg-clip-text text-transparent">
-                ELECTRO
+                JBS Electro
               </span>
               <span className="block text-[9px] uppercase tracking-widest text-slate-400 font-semibold">
                 ERP System
