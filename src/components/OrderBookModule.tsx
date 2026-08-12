@@ -20,7 +20,7 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
   const myOrders = orders.filter(o => o.order_man_id === orderMan.id);
   const [showModal, setShowModal] = useState(false);
   const [customerName, setCustomerName] = useState('');
-  const [items, setItems] = useState<{ id: string; product_id: string; product_name: string; uom: string; qty: number; rate: number; amount: number }[]>([]);
+  const [items, setItems] = useState<{ id: string; product_id: string; product_name: string; uom: string; qty: number; rate: number; amount: number; searchText?: string }[]>([]);
   const [remarks, setRemarks] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -207,18 +207,43 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
                 <div className="space-y-2">
                   {items.map((it, idx) => (
                     <div key={it.id} className="flex items-end gap-2">
-                      <div className="flex-1">
-                        <select
-                          value={it.product_id}
-                          onChange={e => updateItemRow(idx, 'product_id', e.target.value)}
-                          required
+                      <div className="flex-1 relative">
+                        <input
+                          type="text"
+                          value={it.searchText || it.product_name || ''}
+                          onChange={e => {
+                            const val = e.target.value;
+                            const updated = [...items];
+                            updated[idx] = { ...updated[idx], searchText: val, product_id: '', product_name: '', uom: '', rate: 0, amount: 0 };
+                            setItems(updated);
+                          }}
+                          onFocus={() => {
+                            const updated = [...items];
+                            updated[idx] = { ...updated[idx], searchText: updated[idx].product_name || '' };
+                            setItems(updated);
+                          }}
+                          placeholder="Search product..."
                           className="w-full px-3 py-2 rounded-xl glass-input text-xs"
-                        >
-                          <option value="">Select product</option>
-                          {products.map(p => (
-                            <option key={p.id} value={p.id}>{p.name} (₹{p.price} / {p.uom})</option>
-                          ))}
-                        </select>
+                          required={!it.product_id}
+                        />
+                        {items[idx].searchText && (
+                          <div className="absolute z-30 bg-slate-900 border border-slate-700 rounded-xl shadow-xl max-h-40 overflow-y-auto mt-1 w-full">
+                            {products.filter(p => (p.name || '').toLowerCase().includes((items[idx].searchText || '').toLowerCase())).map(p => (
+                              <button
+                                key={p.id}
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...items];
+                                  updated[idx] = { ...updated[idx], product_id: p.id, product_name: p.name, uom: p.uom, qty: updated[idx].qty || 1, rate: p.price || 0, amount: (updated[idx].qty || 1) * (p.price || 0), searchText: '' };
+                                  setItems(updated);
+                                }}
+                                className="w-full text-left px-3 py-1.5 text-xs hover:bg-slate-800 text-slate-200"
+                              >
+                                {p.name} (₹{p.price} / {p.uom})
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <input
                         type="number"
