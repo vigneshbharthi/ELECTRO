@@ -45,8 +45,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     const inputMobileClean = inputClean.replace(/\D/g, '');
 
     // 1. Check if Developer Login
-    if (inputClean.toLowerCase() === devUser.toLowerCase() || inputClean.toLowerCase() === 'developer') {
-      if (passClean === devPass || passClean === 'dev123') {
+    if (inputClean.toLowerCase() === devUser.toLowerCase()) {
+      if (passClean === devPass) {
         setAuth({
           isAuthenticated: true,
           isDeveloperMode: true,
@@ -60,8 +60,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
 
     // 2. Check if Admin Login
-    if (inputClean.toLowerCase() === adminUser.toLowerCase() || inputClean.toLowerCase() === 'admin') {
-      if (passClean === adminPass || passClean === 'admin123') {
+    if (inputClean.toLowerCase() === adminUser.toLowerCase()) {
+      if (passClean === adminPass) {
         setAuth({
           isAuthenticated: true,
           isDeveloperMode: false,
@@ -126,6 +126,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         onClose();
         return;
       }
+      // User record matched but password failed — stop here, don't fall through to orderman check
+      setIsLoading(false);
+      setErrorMessage('Incorrect password for this account. Please try again.');
+      return;
     }
 
     // Auto-Registration of unknown 10-digit mobile is DISABLED for security.

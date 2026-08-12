@@ -217,12 +217,12 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
     : 1;
 
   const handleSyncLocalToCloud = async () => {
-    if (!confirm('Push all local-only data (electricians, order men, products, claims, transactions, redemptions) to Supabase cloud? Other devices will then see this data after refresh.')) return;
+    if (!confirm('Push all local-only data (electricians, order men, products, claims, transactions, redemptions, orders) to Supabase cloud? Other devices will then see this data after refresh.')) return;
     setSyncing(true);
     setSyncResult(null);
     try {
       const r = await dataService.syncLocalToCloud();
-      const pushed = r.electricians + r.orderMen + r.products + r.claims + r.transactions + r.redemptions;
+      const pushed = r.electricians + r.orderMen + r.products + r.claims + r.transactions + r.redemptions + r.orders;
       if (pushed === 0) {
         setSyncResult('No new local records to sync — everything is already in cloud.');
       } else {
@@ -233,6 +233,7 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
         if (r.claims) msg += `  • Claims: ${r.claims}\n`;
         if (r.transactions) msg += `  • Transactions: ${r.transactions}\n`;
         if (r.redemptions) msg += `  • Redemptions: ${r.redemptions}\n`;
+        if (r.orders) msg += `  • Orders: ${r.orders}\n`;
         setSyncResult(msg.trim());
       }
       if (r.errors.length > 0) {

@@ -18,3 +18,17 @@ ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 CREATE POLICY IF NOT EXISTS "Allow all access to orders" ON public.orders FOR ALL USING (true) WITH CHECK (true);
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.orders TO anon;
 CREATE INDEX IF NOT EXISTS idx_orders_order_man_id ON public.orders(order_man_id);
+
+-- Convert electrician child-table FKs from ON DELETE CASCADE to ON DELETE SET NULL
+-- so "Delete Profile Only" preserves the audit trail in the cloud (name is denormalized).
+ALTER TABLE public.point_transactions DROP CONSTRAINT IF EXISTS point_transactions_electrician_id_fkey;
+ALTER TABLE public.redemptions DROP CONSTRAINT IF EXISTS redemptions_electrician_id_fkey;
+ALTER TABLE public.electrician_claims DROP CONSTRAINT IF EXISTS electrician_claims_electrician_id_fkey;
+
+ALTER TABLE public.point_transactions ALTER COLUMN electrician_id DROP NOT NULL;
+ALTER TABLE public.redemptions ALTER COLUMN electrician_id DROP NOT NULL;
+ALTER TABLE public.electrician_claims ALTER COLUMN electrician_id DROP NOT NULL;
+
+ALTER TABLE public.point_transactions ADD CONSTRAINT point_transactions_electrician_id_fkey FOREIGN KEY (electrician_id) REFERENCES public.electricians(id) ON DELETE SET NULL;
+ALTER TABLE public.redemptions ADD CONSTRAINT redemptions_electrician_id_fkey FOREIGN KEY (electrician_id) REFERENCES public.electricians(id) ON DELETE SET NULL;
+ALTER TABLE public.electrician_claims ADD CONSTRAINT electrician_claims_electrician_id_fkey FOREIGN KEY (electrician_id) REFERENCES public.electricians(id) ON DELETE SET NULL;

@@ -206,13 +206,21 @@ export function App() {
   };
 
   const handleUpdateOrder = async (id: string, updates: Partial<Order>) => {
-    await dataService.updateOrder(id, updates);
-    await loadData();
+    try {
+      await dataService.updateOrder(id, updates);
+      await loadData();
+    } catch (e: any) {
+      alert(e?.message || 'Failed to update order.');
+    }
   };
 
   const handleUpdateOrderStatus = async (id: string, status: 'pending' | 'billed', remarks?: string) => {
-    await dataService.updateOrderStatus(id, status, remarks);
-    await loadData();
+    try {
+      await dataService.updateOrderStatus(id, status, remarks);
+      await loadData();
+    } catch (e: any) {
+      alert(e?.message || 'Failed to update order status.');
+    }
   };
 
   const handleDeleteOrder = async (id: string) => {
@@ -294,9 +302,9 @@ export function App() {
     setActiveModule('ledger_report');
   };
 
-  // Find active profile for role-based view
-  const currentElectrician = electricians.find(e => e.id === auth.userId || e.mobile === auth.userMobile) || electricians[0];
-  const currentOrderMan = orderMen.find(o => o.id === auth.userId || o.mobile === auth.userMobile) || orderMen[0];
+  // Find active profile for role-based view (no silent fallback to first record)
+  const currentElectrician = electricians.find(e => e.id === auth.userId || e.mobile === auth.userMobile);
+  const currentOrderMan = orderMen.find(o => o.id === auth.userId || o.mobile === auth.userMobile);
 
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans">
@@ -332,37 +340,30 @@ export function App() {
           <>
             {/* ROLE BASED VIEW SECURITY */}
             {auth.userRole === 'electrician' ? (
-              <ElectricianPortal
-                electrician={currentElectrician}
-                transactions={transactions}
-                claims={claims}
-                settings={settings}
-                onSubmitClaim={handleSubmitClaim}
-                onUpdateClaim={handleUpdateClaim}
-                onDeleteClaim={handleDeleteClaim}
-              />
+              currentElectrician ? (
+                <ElectricianPortal
+                  electrician={currentElectrician}
+                  transactions={transactions}
+                  claims={claims}
+                  settings={settings}
+                  onSubmitClaim={handleSubmitClaim}
+                  onUpdateClaim={handleUpdateClaim}
+                  onDeleteClaim={handleDeleteClaim}
+                />
+              ) : (
+                <div className="glass-panel p-8 rounded-2xl text-center">
+                  <p className="text-sm text-rose-400 font-bold">Your profile could not be loaded. Please contact the admin.</p>
+                </div>
+              )
             ) : auth.userRole === 'orderman' ? (
-              <>
-                {activeModule === 'order_book' && (
-                  <OrderBookModule
-                    orderMan={currentOrderMan}
-                    products={products}
-                    orders={orders}
-                    settings={settings}
-                    onAddOrder={handleAddOrder}
-                    onUpdateOrder={handleUpdateOrder}
-                    onUpdateOrderStatus={handleUpdateOrderStatus}
-                    onDeleteOrder={handleDeleteOrder}
-                  />
-                )}
-                {activeModule === 'order_catalog' && (
-                  <OrderManProductView
-                    orderMan={currentOrderMan}
-                    products={products}
-                  />
-                )}
-                {activeModule !== 'order_book' && activeModule !== 'order_catalog' && (
-                  <>
+              currentOrderMan ? (
+                <>
+                  {(activeModule === 'order_catalog') ? (
+                    <OrderManProductView
+                      orderMan={currentOrderMan}
+                      products={products}
+                    />
+                  ) : (
                     <OrderBookModule
                       orderMan={currentOrderMan}
                       products={products}
@@ -373,9 +374,13 @@ export function App() {
                       onUpdateOrderStatus={handleUpdateOrderStatus}
                       onDeleteOrder={handleDeleteOrder}
                     />
-                  </>
-                )}
-              </>
+                  )}
+                </>
+              ) : (
+                <div className="glass-panel p-8 rounded-2xl text-center">
+                  <p className="text-sm text-rose-400 font-bold">Your profile could not be loaded. Please contact the admin.</p>
+                </div>
+              )
             ) : (
               <>
                 {/* ADMIN & DEVELOPER FULL ACCESS VIEWS */}

@@ -25,7 +25,7 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const addItemRow = () => {
-    setItems([...items, { id: `line-${Date.now()}`, product_id: '', product_name: '', uom: '', qty: 1, rate: 0, amount: 0 }]);
+    setItems([...items, { id: `line-${crypto.randomUUID ? crypto.randomUUID() : Date.now() + Math.random()}`, product_id: '', product_name: '', uom: '', qty: 1, rate: 0, amount: 0 }]);
   };
   const updateItemRow = (idx: number, field: string, value: any) => {
     const updated = [...items];
@@ -55,6 +55,7 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
     if (!customerName.trim()) { alert('Please enter customer name'); return; }
     if (items.length === 0) { alert('Please add at least one product line item'); return; }
     if (items.some(it => !it.product_id)) { alert('Please select product for all line items'); return; }
+    if (items.some(it => !it.qty || it.qty <= 0)) { alert('Qty must be greater than zero for every line item'); return; }
 
     const orderData = {
       order_man_id: orderMan.id,
@@ -165,7 +166,7 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
                   {order.status === 'pending' && (
                     <>
                       <button onClick={() => openEdit(order)} className="text-[11px] font-bold text-teal-400 hover:underline">Edit</button>
-                      <button onClick={() => onDeleteOrder(order.id)} className="text-[11px] font-bold text-rose-400 hover:underline">Delete</button>
+                      <button onClick={() => { if (confirm(`Delete order ${order.order_no}? This cannot be undone.`)) onDeleteOrder(order.id); }} className="text-[11px] font-bold text-rose-400 hover:underline">Delete</button>
                     </>
                   )}
                 </div>

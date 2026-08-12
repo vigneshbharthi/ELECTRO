@@ -455,7 +455,7 @@ export const dataService = {
         electrician_id: claim.electrician_id,
         electrician_name: claim.electrician_name,
         date: new Date().toISOString(),
-        particular: `Claim Approved: Bill #${claim.bill_no} (Ã¢â€šÂ¹${claim.bill_amount.toLocaleString('en-IN')})`,
+        particular: `Claim Approved: Bill #${claim.bill_no} (₹${claim.bill_amount.toLocaleString('en-IN')})`,
         debit_points: 0,
         credit_points: claim.claimed_points
       });
@@ -691,32 +691,39 @@ export const dataService = {
 
   // ORDERS / ORDER BOOK SERVICES
   async getOrders(orderManId?: string): Promise<Order[]> {
+    let supabaseOrders: Order[] = [];
     try {
-      let query = supabase.from('orders').select('*').order('order_date', { ascending: false });
-      if (orderManId) {
-        query = query.eq('order_man_id', orderManId);
-      }
-      const { data, error } = await query;
-      if (!error && data && data.length > 0) {
-        setLocal('orders', data);
-        return data as Order[];
+      const { data, error } = await supabase.from('orders').select('*').order('order_date', { ascending: false });
+      if (!error && data) {
+        supabaseOrders = data as Order[];
       }
     } catch (e) {
-      console.warn('Supabase get orders error:', e);
+      console.warn('Supabase get orders error, fallback to local:', e);
     }
+
     const localOrders = getLocal<Order[]>('orders', initialOrders);
+    const map = new Map<string, Order>();
+    [...supabaseOrders, ...localOrders].forEach(item => {
+      if (item && item.id) {
+        if (!map.has(item.id)) {
+          map.set(item.id, item);
+        }
+      }
+    });
+
+    const merged = Array.from(map.values());
+    setLocal('orders', merged);
     if (orderManId) {
-      return localOrders.filter(o => o.order_man_id === orderManId);
+      return merged.filter(o => o.order_man_id === orderManId);
     }
-    return localOrders;
+    return merged;
   },
 
   async addOrder(order: Omit<Order, 'id' | 'order_no' | 'created_at' | 'updated_at'>): Promise<Order> {
-    const orderNo = `ORD-${Date.now()}`;
     const newOrder: Order = {
       ...order,
-      id: crypto.randomUUID ? crypto.randomUUID() : `ord-${Date.now()}`,
-      order_no: orderNo,
+      id: crypto.randomUUID ? crypto.randomUUID() : `ord-${crypto.randomUUID ? crypto.randomUUID() : Date.now()}`,
+      order_no: `ORD-${Date.now()}-${(crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36)).slice(0, 6)}`,
       status: order.status || 'pending',
       total_amount: order.total_amount || 0,
       created_at: new Date().toISOString(),
@@ -738,8 +745,19 @@ export const dataService = {
   },
 
   async updateOrder(id: string, updates: Partial<Order>): Promise<Order | null> {
+    // Only pending orders may be edited - guard like claims
+    const existing = (await this.getOrders()).find(o => o.id === id);
+    if (existing && existing.status !== 'pending') {
+      throw new Error(`Cannot edit an order that is already ${existing.status}.`);
+    }
     const safeUpdates = { ...updates };
-    if ((safeUpdates as any).status) delete (safeUpdates as any).status;
+    // Never allow status / identity mutation through this generic update path (use updateOrderStatus)
+    delete (safeUpdates as any).status;
+    delete (safeUpdates as any).order_no;
+    delete (safeUpdates as any).order_man_id;
+    delete (safeUpdates as any).billed_at;
+    delete (safeUpdates as any).created_at;
+    delete (safeUpdates as any).id;
     const updatedObj = { ...safeUpdates, updated_at: new Date().toISOString() };
     try {
       const { data, error } = await supabase.from('orders').update(updatedObj).eq('id', id).select().single();
@@ -765,9 +783,15 @@ export const dataService = {
   },
 
   async updateOrderStatus(id: string, status: 'pending' | 'billed', remarks?: string): Promise<Order | null> {
+    const existing = (await this.getOrders()).find(o => o.id === id);
+    // Prevent downgrading an already-billed order back to pending
+    if (existing && existing.status === 'billed' && status === 'pending') {
+      throw new Error('An already-billed order cannot be changed back to pending.');
+    }
     const updateData: Partial<Order> = { status, updated_at: new Date().toISOString() };
     if (status === 'billed') {
-      (updateData as any).billed_at = new Date().toISOString();
+      // Preserve original billed_at timestamp
+      (updateData as any).billed_at = existing?.billed_at || new Date().toISOString();
     }
     if (remarks !== undefined) (updateData as any).remarks = remarks;
     try {

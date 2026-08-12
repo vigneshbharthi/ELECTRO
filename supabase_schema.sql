@@ -57,7 +57,7 @@ CREATE TABLE public.products (
 -- 4. POINT TRANSACTIONS / LEDGER TABLE
 CREATE TABLE public.point_transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    electrician_id UUID NOT NULL REFERENCES public.electricians(id) ON DELETE CASCADE,
+    electrician_id UUID REFERENCES public.electricians(id) ON DELETE SET NULL,
     electrician_name TEXT,
     date TIMESTAMPTZ DEFAULT NOW(),
     particular TEXT NOT NULL,
@@ -69,7 +69,7 @@ CREATE TABLE public.point_transactions (
 -- 5. REDEMPTIONS TABLE
 CREATE TABLE public.redemptions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    electrician_id UUID NOT NULL REFERENCES public.electricians(id) ON DELETE CASCADE,
+    electrician_id UUID REFERENCES public.electricians(id) ON DELETE SET NULL,
     electrician_name TEXT,
     electrician_mobile TEXT,
     points INTEGER NOT NULL,
@@ -83,7 +83,7 @@ CREATE TABLE public.redemptions (
 -- 6. ELECTRICIAN POINT CLAIMS APPROVAL TABLE
 CREATE TABLE public.electrician_claims (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    electrician_id UUID NOT NULL REFERENCES public.electricians(id) ON DELETE CASCADE,
+    electrician_id UUID REFERENCES public.electricians(id) ON DELETE SET NULL,
     electrician_name TEXT,
     electrician_mobile TEXT,
     bill_no TEXT NOT NULL,

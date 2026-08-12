@@ -87,7 +87,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     ] },
   ];
 
-  const displayCategories = auth.userRole === 'orderman' ? orderManNav : navCategories;
+  const displayCategories = auth.userRole === 'orderman' ? orderManNav : (auth.userRole === 'electrician' ? [] : navCategories);
 
   const handleSelectSubModule = (subId: string) => {
     setActiveModule(subId);

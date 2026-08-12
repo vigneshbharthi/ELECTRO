@@ -25,7 +25,7 @@ export const PointsLedgerReport: React.FC<PointsLedgerReportProps> = ({
     const matchesElectrician = selectedElectricianId === 'all' || 
       t.electrician_id === selectedElectricianId || 
       (selectedElec && (t.electrician_name === selectedElec.name || t.electrician_id === selectedElec.id));
-    const matchesSearch = t.particular.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = (t.particular || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (t.electrician_name && t.electrician_name.toLowerCase().includes(searchTerm.toLowerCase()));
 
     let matchesDate = true;

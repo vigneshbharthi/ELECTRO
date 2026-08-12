@@ -105,11 +105,11 @@ export const ElectricianCrud: React.FC<ElectricianCrudProps> = ({
   };
 
   const filteredElectricians = electricians.filter(e =>
-    e.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    e.father_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    e.mobile.includes(searchTerm) ||
-    e.pincode.includes(searchTerm) ||
-    e.address.toLowerCase().includes(searchTerm.toLowerCase())
+    (e.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (e.father_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (e.mobile || '').includes(searchTerm) ||
+    (e.pincode || '').includes(searchTerm) ||
+    (e.address || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -248,65 +248,13 @@ export const ElectricianCrud: React.FC<ElectricianCrudProps> = ({
                     <Edit2 className="w-4 h-4" />
                   </button>
 
-                  {isDeletingId === elec.id ? (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm" onClick={() => setIsDeletingId(null)}>
-                      <div
-                        className="glass-panel w-full max-w-sm rounded-2xl p-5 relative border border-slate-700 shadow-2xl"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <h4 className="font-bold text-slate-100 text-sm">Delete {elec.name}?</h4>
-                        {deleteCounts && (deleteCounts.claims > 0 || deleteCounts.transactions > 0 || deleteCounts.redemptions > 0) ? (
-                          <div className="mt-3 space-y-2">
-                            <p className="text-xs text-slate-300">
-                              This electrician has:
-                            </p>
-                            <ul className="text-[11px] text-slate-400 space-y-1">
-                              <li>• {deleteCounts.claims} bill claim(s)</li>
-                              <li>• {deleteCounts.transactions} ledger transaction(s)</li>
-                              <li>• {deleteCounts.redemptions} redemption request(s)</li>
-                            </ul>
-                            <label className="flex items-start gap-2 mt-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={deleteClearRecords}
-                                onChange={(e) => setDeleteClearRecords(e.target.checked)}
-                                className="mt-0.5"
-                              />
-                              <span className="text-[11px] text-rose-300 font-semibold">
-                                Also permanently clear all these records. <span className="text-rose-400/80 font-normal">This removes the audit trail & point history — cannot be undone.</span>
-                              </span>
-                            </label>
-                          </div>
-                        ) : (
-                          <p className="text-xs text-slate-400 mt-2">
-                            No claims, transactions or redemptions linked — safe to delete.
-                          </p>
-                        )}
-                        <div className="flex justify-end gap-2 mt-5">
-                          <button
-                            onClick={() => { setIsDeletingId(null); setDeleteClearRecords(false); setDeleteCounts(null); }}
-                            className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-800"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={() => handleDeleteConfirm(elec.id)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-extrabold text-white ${deleteCounts && (deleteCounts.claims > 0 || deleteCounts.transactions > 0 || deleteCounts.redemptions > 0) && !deleteClearRecords ? 'bg-slate-600' : 'bg-rose-600 hover:bg-rose-500'}`}
-                          >
-                            {deleteCounts && (deleteCounts.claims > 0 || deleteCounts.transactions > 0 || deleteCounts.redemptions > 0) && !deleteClearRecords ? 'Delete Profile Only' : 'Delete'}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => handleRequestDelete(elec.id)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors"
-                      title="Delete Electrician"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
+                  <button
+                    onClick={() => handleRequestDelete(elec.id)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors"
+                    title="Delete Electrician"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -463,6 +411,65 @@ export const ElectricianCrud: React.FC<ElectricianCrudProps> = ({
             </form>
           </div>
         </div>
+      )}
+
+      {/* Delete Confirmation Modal (rendered at component root to avoid transformed-ancestor issues) */}
+      {isDeletingId && (
+        (() => {
+          const deletingElec = electricians.find(e => e.id === isDeletingId);
+          if (!deletingElec) return null;
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm" onClick={() => { setIsDeletingId(null); setDeleteClearRecords(false); setDeleteCounts(null); }}>
+              <div
+                className="glass-panel w-full max-w-sm rounded-2xl p-5 relative border border-slate-700 shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h4 className="font-bold text-slate-100 text-sm">Delete {deletingElec.name}?</h4>
+                {deleteCounts && (deleteCounts.claims > 0 || deleteCounts.transactions > 0 || deleteCounts.redemptions > 0) ? (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-xs text-slate-300">
+                      This electrician has:
+                    </p>
+                    <ul className="text-[11px] text-slate-400 space-y-1">
+                      <li>• {deleteCounts.claims} bill claim(s)</li>
+                      <li>• {deleteCounts.transactions} ledger transaction(s)</li>
+                      <li>• {deleteCounts.redemptions} redemption request(s)</li>
+                    </ul>
+                    <label className="flex items-start gap-2 mt-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={deleteClearRecords}
+                        onChange={(e) => setDeleteClearRecords(e.target.checked)}
+                        className="mt-0.5"
+                      />
+                      <span className="text-[11px] text-rose-300 font-semibold">
+                        Also permanently clear all these records. <span className="text-rose-400/80 font-normal">This removes the audit trail & point history — cannot be undone.</span>
+                      </span>
+                    </label>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 mt-2">
+                    No claims, transactions or redemptions linked — safe to delete.
+                  </p>
+                )}
+                <div className="flex justify-end gap-2 mt-5">
+                  <button
+                    onClick={() => { setIsDeletingId(null); setDeleteClearRecords(false); setDeleteCounts(null); }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleDeleteConfirm(deletingElec.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-extrabold text-white ${deleteCounts && (deleteCounts.claims > 0 || deleteCounts.transactions > 0 || deleteCounts.redemptions > 0) && !deleteClearRecords ? 'bg-slate-600' : 'bg-rose-600 hover:bg-rose-500'}`}
+                  >
+                    {deleteCounts && (deleteCounts.claims > 0 || deleteCounts.transactions > 0 || deleteCounts.redemptions > 0) && !deleteClearRecords ? 'Delete Profile Only' : 'Delete'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()
       )}
     </div>
   );
