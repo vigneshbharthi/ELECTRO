@@ -432,6 +432,7 @@ export function App() {
                     settings={settings}
                     onUpdateClaimStatus={handleUpdateClaimStatus}
                     onSubmitClaim={handleSubmitClaim}
+                    onUpdateClaim={handleUpdateClaim}
                   />
                 )}
 

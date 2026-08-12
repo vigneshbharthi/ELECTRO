@@ -8,6 +8,7 @@ interface ElectricianClaimsApprovalProps {
   settings: AppSettings;
   onUpdateClaimStatus: (id: string, status: 'approved' | 'rejected', remarks?: string) => Promise<void>;
   onSubmitClaim: (claim: Omit<ElectricianClaim, 'id' | 'status' | 'submitted_date'>) => Promise<void>;
+  onUpdateClaim?: (id: string, updates: Partial<ElectricianClaim>) => Promise<void>;
 }
 
 export const ElectricianClaimsApproval: React.FC<ElectricianClaimsApprovalProps> = ({
@@ -15,7 +16,8 @@ export const ElectricianClaimsApproval: React.FC<ElectricianClaimsApprovalProps>
   claims,
   settings,
   onUpdateClaimStatus,
-  onSubmitClaim
+  onSubmitClaim,
+  onUpdateClaim
 }) => {
   // Normalize points percent so a malformed/legacy settings blob can never yield NaN points
   const pointsPercent = (settings.pointsPercent && !Number.isNaN(settings.pointsPercent)) ? settings.pointsPercent : 1;
@@ -231,6 +233,25 @@ export const ElectricianClaimsApproval: React.FC<ElectricianClaimsApprovalProps>
               {/* Approval Actions */}
               {activeTab === 'pending' && (
                 <div className="pt-3 border-t border-slate-800/80 space-y-2">
+                  <button
+                    onClick={async () => {
+                      if (!onUpdateClaim) return;
+                      const newBillNo = prompt('Bill / Invoice Number:', claim.bill_no);
+                      const newBillAmountStr = prompt('Total Bill Amount (₹):', String(claim.bill_amount));
+                      const newRemarks = prompt('Remarks / Particulars:', claim.remarks || '');
+                      const updates: Partial<ElectricianClaim> = {};
+                      if (newBillNo !== null) updates.bill_no = newBillNo;
+                      if (newBillAmountStr !== null) {
+                        const amt = Number(newBillAmountStr);
+                        if (!isNaN(amt) && amt > 0) updates.bill_amount = amt;
+                      }
+                      if (newRemarks !== null) updates.remarks = newRemarks || '';
+                      if (Object.keys(updates).length > 0) await onUpdateClaim(claim.id, updates);
+                    }}
+                    className="w-full py-1.5 rounded-xl bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 border border-violet-500/30 font-bold text-[11px] transition-all"
+                  >
+                    Edit Claim Details
+                  </button>
                   <input
                     type="text"
                     placeholder="Optional rejection remarks..."
