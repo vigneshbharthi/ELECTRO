@@ -15,8 +15,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow all access to orders" ON public.orders;
-CREATE POLICY "Allow all access to orders" ON public.orders FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY IF NOT EXISTS "Allow all access to orders" ON public.orders FOR ALL USING (true) WITH CHECK (true);
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.orders TO anon;
 CREATE INDEX IF NOT EXISTS idx_orders_order_man_id ON public.orders(order_man_id);
 

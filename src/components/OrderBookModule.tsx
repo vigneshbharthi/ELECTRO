@@ -23,7 +23,6 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
   const [items, setItems] = useState<{ id: string; product_id: string; product_name: string; uom: string; qty: number; rate: number; amount: number }[]>([]);
   const [remarks, setRemarks] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [productSearch, setProductSearch] = useState('');
 
   const addItemRow = () => {
     setItems([...items, { id: `line-${crypto.randomUUID ? crypto.randomUUID() : Date.now() + Math.random()}`, product_id: '', product_name: '', uom: '', qty: 1, rate: 0, amount: 0 }]);
@@ -205,15 +204,6 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
                     <Plus className="w-3.5 h-3.5" /> Add Product
                   </button>
                 </div>
-                <div className="mb-2">
-                  <input
-                    type="text"
-                    placeholder="Search product..."
-                    value={productSearch}
-                    onChange={e => setProductSearch(e.target.value)}
-                    className="w-full px-2 py-1 rounded-lg glass-input text-xs mb-2"
-                  />
-                </div>
                 <div className="space-y-2">
                   {items.map((it, idx) => (
                     <div key={it.id} className="flex items-end gap-2">
@@ -225,7 +215,7 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
                           className="w-full px-3 py-2 rounded-xl glass-input text-xs"
                         >
                           <option value="">Select product</option>
-                          {products.filter(p => (p.name || '').toLowerCase().includes(productSearch.toLowerCase())).map(p => (
+                          {products.map(p => (
                             <option key={p.id} value={p.id}>{p.name} (₹{p.price} / {p.uom})</option>
                           ))}
                         </select>
