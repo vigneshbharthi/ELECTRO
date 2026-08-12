@@ -470,6 +470,7 @@ export function App() {
                     orderMen={orderMen}
                     products={products}
                     onUpdateOrderStatus={handleUpdateOrderStatus}
+                    onUpdateOrder={handleUpdateOrder}
                   />
                 )}
 

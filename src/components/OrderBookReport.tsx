@@ -7,6 +7,7 @@ interface OrderBookReportProps {
   orderMen: OrderMan[];
   products: Product[];
   onUpdateOrderStatus: (id: string, status: 'pending' | 'billed', remarks?: string) => Promise<void>;
+  onUpdateOrder?: (id: string, updates: Partial<Order>) => Promise<void>;
 }
 
 export const OrderBookReport: React.FC<OrderBookReportProps> = ({ orders, orderMen, products, onUpdateOrderStatus }) => {
@@ -60,17 +61,32 @@ export const OrderBookReport: React.FC<OrderBookReportProps> = ({ orders, orderM
                     {order.status}
                   </span>
                 </td>
-                <td className="px-3 py-2 text-center">
-                  {order.status === 'pending' ? (
-                    <button
-                      onClick={() => onUpdateOrderStatus(order.id, 'billed', 'Billed by admin')}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/20 text-[10px] font-extrabold"
-                      title="Mark as Billed"
-                    >
-                      <CheckCircle className="w-3 h-3" />
-                      <span>Billed</span>
-                    </button>
-                  ) : (
+                <td className="px-3 py-2 text-center flex gap-1 justify-center">
+                  {order.status === 'pending' && (
+                    <>
+                      <button
+                        onClick={async () => {
+                          const newRemarks = prompt('Remarks:', order.remarks || '');
+                          if (newRemarks !== null && onUpdateOrder) {
+                            await onUpdateOrder(order.id, { remarks: newRemarks || '' });
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 border border-violet-500/20 text-[10px] font-extrabold"
+                        title="Edit"
+                      >
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        onClick={() => onUpdateOrderStatus(order.id, 'billed', 'Billed by admin')}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/20 text-[10px] font-extrabold"
+                        title="Mark as Billed"
+                      >
+                        <CheckCircle className="w-3 h-3" />
+                        <span>Billed</span>
+                      </button>
+                    </>
+                  )}
+                  {order.status === 'billed' && (
                     <span className="text-[10px] text-slate-500">Done</span>
                   )}
                 </td>
