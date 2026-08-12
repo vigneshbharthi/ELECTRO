@@ -163,6 +163,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
 
     if (om) {
+      if (om.status === 'inactive') {
+        setErrorMessage('Your account is inactive. Please contact the admin.');
+        setIsLoading(false);
+        return;
+      }
       const omPass = (om.password || 'order123').trim();
       if (omPass !== '' && passClean === omPass) {
         setAuth({

@@ -87,6 +87,32 @@ export interface Redemption {
   remarks?: string;
 }
 
+export interface OrderItem {
+  id: string;
+  product_id: string;
+  product_name: string;
+  uom: string;
+  qty: number;
+  rate: number;
+  amount: number;
+}
+
+export interface Order {
+  id: string;
+  order_no: string;
+  order_man_id: string;
+  order_man_name?: string;
+  customer_name: string;
+  order_date: string;
+  items: OrderItem[];
+  total_amount: number;
+  status: 'pending' | 'billed';
+  remarks?: string;
+  billed_at?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface UserAuth {
   isAuthenticated: boolean;
   isDeveloperMode: boolean;

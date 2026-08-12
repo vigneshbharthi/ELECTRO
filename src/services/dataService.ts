@@ -1,5 +1,5 @@
-import { supabase } from '../lib/supabase';
-import { Electrician, OrderMan, Product, PointTransaction, Redemption } from '../types';
+﻿import { supabase } from '../lib/supabase';
+import { Electrician, OrderMan, Product, PointTransaction, Redemption, Order, OrderItem } from '../types';
 
 // Clean empty initial data arrays for fresh production setup
 const initialElectricians: Electrician[] = [];
@@ -8,6 +8,7 @@ const initialProducts: Product[] = [];
 const initialTransactions: PointTransaction[] = [];
 const initialRedemptions: Redemption[] = [];
 const initialClaims: any[] = [];
+const initialOrders: Order[] = [];
 
 // Helper functions for LocalStorage
 const getLocal = <T>(key: string, fallback: T): T => {
@@ -454,7 +455,7 @@ export const dataService = {
         electrician_id: claim.electrician_id,
         electrician_name: claim.electrician_name,
         date: new Date().toISOString(),
-        particular: `Claim Approved: Bill #${claim.bill_no} (₹${claim.bill_amount.toLocaleString('en-IN')})`,
+        particular: `Claim Approved: Bill #${claim.bill_no} (Ã¢â€šÂ¹${claim.bill_amount.toLocaleString('en-IN')})`,
         debit_points: 0,
         credit_points: claim.claimed_points
       });
@@ -688,10 +689,130 @@ export const dataService = {
     return true;
   },
 
+  // ORDERS / ORDER BOOK SERVICES
+  async getOrders(orderManId?: string): Promise<Order[]> {
+    try {
+      let query = supabase.from('orders').select('*').order('order_date', { ascending: false });
+      if (orderManId) {
+        query = query.eq('order_man_id', orderManId);
+      }
+      const { data, error } = await query;
+      if (!error && data && data.length > 0) {
+        setLocal('orders', data);
+        return data as Order[];
+      }
+    } catch (e) {
+      console.warn('Supabase get orders error:', e);
+    }
+    const localOrders = getLocal<Order[]>('orders', initialOrders);
+    if (orderManId) {
+      return localOrders.filter(o => o.order_man_id === orderManId);
+    }
+    return localOrders;
+  },
+
+  async addOrder(order: Omit<Order, 'id' | 'order_no' | 'created_at' | 'updated_at'>): Promise<Order> {
+    const orderNo = `ORD-${Date.now()}`;
+    const newOrder: Order = {
+      ...order,
+      id: crypto.randomUUID ? crypto.randomUUID() : `ord-${Date.now()}`,
+      order_no: orderNo,
+      status: order.status || 'pending',
+      total_amount: order.total_amount || 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    try {
+      const { data, error } = await supabase.from('orders').insert([newOrder]).select().single();
+      if (!error && data) {
+        const current = getLocal<Order[]>('orders', initialOrders);
+        setLocal('orders', [data, ...current]);
+        return data as Order;
+      }
+    } catch (e) {
+      console.warn('Supabase insert order error:', e);
+    }
+    const current = getLocal<Order[]>('orders', initialOrders);
+    setLocal('orders', [newOrder, ...current]);
+    return newOrder;
+  },
+
+  async updateOrder(id: string, updates: Partial<Order>): Promise<Order | null> {
+    const safeUpdates = { ...updates };
+    if ((safeUpdates as any).status) delete (safeUpdates as any).status;
+    const updatedObj = { ...safeUpdates, updated_at: new Date().toISOString() };
+    try {
+      const { data, error } = await supabase.from('orders').update(updatedObj).eq('id', id).select().single();
+      if (!error && data) {
+        const current = getLocal<Order[]>('orders', initialOrders);
+        setLocal('orders', current.map(o => o.id === id ? (data as Order) : o));
+        return data as Order;
+      }
+    } catch (e) {
+      console.warn('Supabase update order error:', e);
+    }
+    const current = getLocal<Order[]>('orders', initialOrders);
+    let result: Order | null = null;
+    const list = current.map(o => {
+      if (o.id === id) {
+        result = { ...o, ...updatedObj } as Order;
+        return result;
+      }
+      return o;
+    });
+    setLocal('orders', list);
+    return result;
+  },
+
+  async updateOrderStatus(id: string, status: 'pending' | 'billed', remarks?: string): Promise<Order | null> {
+    const updateData: Partial<Order> = { status, updated_at: new Date().toISOString() };
+    if (status === 'billed') {
+      (updateData as any).billed_at = new Date().toISOString();
+    }
+    if (remarks !== undefined) (updateData as any).remarks = remarks;
+    try {
+      const { data, error } = await supabase.from('orders').update(updateData).eq('id', id).select().single();
+      if (!error && data) {
+        const current = getLocal<Order[]>('orders', initialOrders);
+        setLocal('orders', current.map(o => o.id === id ? (data as Order) : o));
+        return data as Order;
+      }
+    } catch (e) {
+      console.warn('Supabase update order status error:', e);
+    }
+    const current = getLocal<Order[]>('orders', initialOrders);
+    let result: Order | null = null;
+    const list = current.map(o => {
+      if (o.id === id) {
+        result = { ...o, ...updateData } as Order;
+        return result;
+      }
+      return o;
+    });
+    setLocal('orders', list);
+    return result;
+  },
+
+  async deleteOrder(id: string): Promise<boolean> {
+    try {
+      const { error } = await supabase.from('orders').delete().eq('id', id);
+      if (!error) {
+        const current = getLocal<Order[]>('orders', initialOrders);
+        setLocal('orders', current.filter(o => o.id !== id));
+        return true;
+      }
+    } catch (e) {
+      console.warn('Supabase delete order error:', e);
+    }
+    const current = getLocal<Order[]>('orders', initialOrders);
+    setLocal('orders', current.filter(o => o.id !== id));
+    return true;
+  },
+
   // ONE-TIME LOCAL -> SUPABASE MIGRATION (call from Settings page)
   // Pushes any local-only records to Supabase so other devices can see them.
-  async syncLocalToCloud(): Promise<{ electricians: number; orderMen: number; products: number; claims: number; transactions: number; redemptions: number; errors: string[] }> {
-    const result = { electricians: 0, orderMen: 0, products: 0, claims: 0, transactions: 0, redemptions: 0, errors: [] as string[] };
+  async syncLocalToCloud(): Promise<{ electricians: number; orderMen: number; products: number; claims: number; transactions: number; redemptions: number; orders: number; errors: string[] }> {
+    const result = { electricians: 0, orderMen: 0, products: 0, claims: 0, transactions: 0, redemptions: 0, orders: 0, errors: [] as string[] };
 
     const push = async (table: string, records: any[], matchKey: string) => {
       if (!records || records.length === 0) return;
@@ -711,6 +832,7 @@ export const dataService = {
           if (table === 'electrician_claims') result.claims += toInsert.length;
           if (table === 'point_transactions') result.transactions += toInsert.length;
           if (table === 'redemptions') result.redemptions += toInsert.length;
+          if (table === 'orders') result.orders += toInsert.length;
         }
       } catch (e: any) {
         result.errors.push(`${table}: ${e?.message || 'unknown error'}`);
@@ -723,6 +845,7 @@ export const dataService = {
     await push('electrician_claims', getLocal<any[]>('claims', []), 'id');
     await push('point_transactions', getLocal<PointTransaction[]>('transactions', []), 'id');
     await push('redemptions', getLocal<Redemption[]>('redemptions', []), 'id');
+    await push('orders', getLocal<Order[]>('orders', []), 'id');
 
     return result;
   }

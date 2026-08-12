@@ -12,9 +12,11 @@ import { SettingsModule } from './components/SettingsModule';
 import { CompanyProfileSettings } from './components/CompanyProfileSettings';
 import { ElectricianPortal } from './components/ElectricianPortal';
 import { OrderManProductView } from './components/OrderManProductView';
+import { OrderBookModule } from './components/OrderBookModule';
+import { OrderBookReport } from './components/OrderBookReport';
 import { AuthModal } from './components/AuthModal';
 import { dataService } from './services/dataService';
-import { Electrician, OrderMan, Product, PointTransaction, Redemption, ElectricianClaim, UserAuth, AppSettings, CompanyProfile } from './types';
+import { Electrician, OrderMan, Product, PointTransaction, Redemption, ElectricianClaim, UserAuth, AppSettings, CompanyProfile, Order, OrderItem } from './types';
 
 export function App() {
   const [activeModule, setActiveModule] = useState<string>('dashboard');
@@ -119,6 +121,7 @@ export function App() {
   const [transactions, setTransactions] = useState<PointTransaction[]>([]);
   const [redemptions, setRedemptions] = useState<Redemption[]>([]);
   const [claims, setClaims] = useState<ElectricianClaim[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [selectedLedgerElectricianId, setSelectedLedgerElectricianId] = useState<string>('all');
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -126,13 +129,14 @@ export function App() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [elecs, oms, prods, txs, reds, clms] = await Promise.all([
+      const [elecs, oms, prods, txs, reds, clms, ords] = await Promise.all([
         dataService.getElectricians(),
         dataService.getOrderMen(),
         dataService.getProducts(),
         dataService.getTransactions(),
         dataService.getRedemptions(),
-        dataService.getClaims()
+        dataService.getClaims(),
+        dataService.getOrders()
       ]);
       setElectricians(elecs);
       setOrderMen(oms);
@@ -140,6 +144,7 @@ export function App() {
       setTransactions(txs);
       setRedemptions(reds);
       setClaims(clms);
+      setOrders(ords);
     } catch (e) {
       console.error('Data load error:', e);
     } finally {
@@ -191,6 +196,27 @@ export function App() {
 
   const handleDeleteOrderMan = async (id: string) => {
     await dataService.deleteOrderMan(id);
+    await loadData();
+  };
+
+  // ORDERS HANDLERS
+  const handleAddOrder = async (order: Omit<Order, 'id' | 'order_no' | 'created_at' | 'updated_at'>) => {
+    await dataService.addOrder(order);
+    await loadData();
+  };
+
+  const handleUpdateOrder = async (id: string, updates: Partial<Order>) => {
+    await dataService.updateOrder(id, updates);
+    await loadData();
+  };
+
+  const handleUpdateOrderStatus = async (id: string, status: 'pending' | 'billed', remarks?: string) => {
+    await dataService.updateOrderStatus(id, status, remarks);
+    await loadData();
+  };
+
+  const handleDeleteOrder = async (id: string) => {
+    await dataService.deleteOrder(id);
     await loadData();
   };
 
@@ -316,10 +342,40 @@ export function App() {
                 onDeleteClaim={handleDeleteClaim}
               />
             ) : auth.userRole === 'orderman' ? (
-              <OrderManProductView
-                orderMan={currentOrderMan}
-                products={products}
-              />
+              <>
+                {activeModule === 'order_book' && (
+                  <OrderBookModule
+                    orderMan={currentOrderMan}
+                    products={products}
+                    orders={orders}
+                    settings={settings}
+                    onAddOrder={handleAddOrder}
+                    onUpdateOrder={handleUpdateOrder}
+                    onUpdateOrderStatus={handleUpdateOrderStatus}
+                    onDeleteOrder={handleDeleteOrder}
+                  />
+                )}
+                {activeModule === 'order_catalog' && (
+                  <OrderManProductView
+                    orderMan={currentOrderMan}
+                    products={products}
+                  />
+                )}
+                {activeModule !== 'order_book' && activeModule !== 'order_catalog' && (
+                  <>
+                    <OrderBookModule
+                      orderMan={currentOrderMan}
+                      products={products}
+                      orders={orders}
+                      settings={settings}
+                      onAddOrder={handleAddOrder}
+                      onUpdateOrder={handleUpdateOrder}
+                      onUpdateOrderStatus={handleUpdateOrderStatus}
+                      onDeleteOrder={handleDeleteOrder}
+                    />
+                  </>
+                )}
+              </>
             ) : (
               <>
                 {/* ADMIN & DEVELOPER FULL ACCESS VIEWS */}
@@ -399,6 +455,16 @@ export function App() {
                     electricians={electricians}
                     transactions={transactions}
                     selectedElectricianId={selectedLedgerElectricianId}
+                  />
+                )}
+
+                {/* ORDER BOOK REPORT */}
+                {activeModule === 'order_book_report' && (
+                  <OrderBookReport
+                    orders={orders}
+                    orderMen={orderMen}
+                    products={products}
+                    onUpdateOrderStatus={handleUpdateOrderStatus}
                   />
                 )}
 

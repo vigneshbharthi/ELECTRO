@@ -64,7 +64,8 @@ export const Navbar: React.FC<NavbarProps> = ({
       label: 'Reports',
       icon: BarChart3,
       items: [
-        { id: 'ledger_report', label: 'Points Ledger Report', icon: FileSpreadsheet, desc: 'S.No, Date, Particular, Debit, Credit, Balance' }
+        { id: 'ledger_report', label: 'Points Ledger Report', icon: FileSpreadsheet, desc: 'S.No, Date, Particular, Debit, Credit, Balance' },
+        { id: 'order_book_report', label: 'Order Book Report', icon: FileSpreadsheet, desc: 'All Order Man Sales Orders' }
       ]
     },
     {
@@ -77,6 +78,16 @@ export const Navbar: React.FC<NavbarProps> = ({
       ]
     }
   ];
+
+  const orderManNav = [
+    { id: 'dashboard', label: 'Dashboard', icon: Zap, items: null },
+    { id: 'order_man', label: 'Order Man', icon: UserCheck, items: [
+      { id: 'order_book', label: 'Order Book', icon: FileSpreadsheet, desc: 'Create & View Sales Orders' },
+      { id: 'order_catalog', label: 'Product Catalog', icon: Package, desc: 'Product Price & Stock Catalog' }
+    ] },
+  ];
+
+  const displayCategories = auth.userRole === 'orderman' ? orderManNav : navCategories;
 
   const handleSelectSubModule = (subId: string) => {
     setActiveModule(subId);
@@ -115,9 +126,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Classic Dropdown Navigation Bar (Desktop) */}
-          {auth.userRole !== 'electrician' && auth.userRole !== 'orderman' && (
+          {auth.userRole !== 'electrician' && (
             <nav className="hidden md:flex items-center space-x-1">
-              {navCategories.map((cat) => {
+              {displayCategories.map((cat) => {
                 const Icon = cat.icon;
                 const isCategoryActive = cat.id === 'dashboard'
                   ? activeModule === 'dashboard'
@@ -233,7 +244,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Mobile Menu Dropdown */}
       {isMobileMenuOpen && (
         <div className="md:hidden bg-slate-950 border-t border-slate-800 p-4 space-y-2 animate-fadeIn">
-          {navCategories.map((cat) => (
+          {displayCategories.map((cat) => (
             <div key={cat.id} className="space-y-1">
               <button
                 onClick={() => toggleDropdown(cat.id)}
