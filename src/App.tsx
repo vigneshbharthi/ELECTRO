@@ -501,22 +501,8 @@ export function App() {
 
       {/* Footer */}
       <footer className="border-t border-slate-800/80 bg-slate-950 py-4 text-center text-xs text-slate-500 no-print">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
-          <div>
-            <strong>JBS Electro Enterprise ERP Portal</strong> • Role-based Access System
-          </div>
-          <div className="flex items-center space-x-3 text-[11px]">
-            <a
-              href="https://github.com/vigneshbharthi/ELECTRO"
-              target="_blank"
-              rel="noreferrer"
-              className="text-teal-400 hover:underline font-medium"
-            >
-              GitHub Repository
-            </a>
-            <span>•</span>
-            <span className="text-slate-400">Supabase Connected</span>
-          </div>
+        <div className="max-w-7xl mx-auto px-4">
+          Developed by VIVEKAINFO @ 2026
         </div>
       </footer>
 
