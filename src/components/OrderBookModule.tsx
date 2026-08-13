@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, FileSpreadsheet, UserCheck, Clock, CheckCircle } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Plus, Trash2, FileSpreadsheet, UserCheck, Clock, CheckCircle, Mic, Square } from 'lucide-react';
 import { OrderMan, Order, Product, OrderItem } from '../types';
 
 interface OrderBookModuleProps {
@@ -25,6 +25,37 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
   const [voiceNoteUrl, setVoiceNoteUrl] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      chunksRef.current = [];
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      recorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.onload = () => setVoiceNoteUrl(reader.result as string);
+        reader.readAsDataURL(blob);
+        stream.getTracks().forEach(t => t.stop());
+      };
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsRecording(true);
+    } catch (e) {
+      alert('Microphone access denied. Please allow mic permission.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
 
   const addItemRow = () => {
     setItems([...items, { id: `line-${crypto.randomUUID ? crypto.randomUUID() : Date.now() + Math.random()}`, product_id: '', product_name: '', uom: '', qty: 1, rate: 0, amount: 0 }]);
@@ -159,13 +190,11 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
                       {order.items.map((it, i) => (
                         <tr key={i} className="border-b border-slate-800/40 last:border-0">
                           <td className="py-1 text-slate-300">{it.product_name}</td>
-                          <td className="py-1 text-slate-400">{it.qty} x {it.uom}</td>
-                          <td className="py-1 text-right text-amber-400 font-mono font-bold">₹{it.amount}</td>
+                          <td className="py-1 text-right text-slate-400">{it.qty} x {it.uom}</td>
                         </tr>
                       ))}
                     </tbody>
-                  </table>
-                  <div className="text-right text-sm font-extrabold text-slate-100 mt-2 border-t border-slate-800 pt-2">Total: ₹{order.total_amount}</div>
+                </table>
                 </div>
                 {order.remarks && <p className="text-[11px] text-slate-500">Remarks: {order.remarks}</p>}
                 <div className="flex items-center gap-2 pt-2">
@@ -260,18 +289,12 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
                         className="w-20 px-2 py-2 rounded-xl glass-input text-xs"
                         placeholder="Qty"
                       />
-                      <span className="text-xs text-slate-300 font-mono w-16">₹{it.amount}</span>
                       <button onClick={() => removeItemRow(idx)} className="text-rose-400 hover:text-rose-300 p-1" title="Remove" type="button">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   ))}
                 </div>
-              </div>
-
-              <div className="flex justify-between text-sm font-bold text-slate-100 border-t border-slate-800 pt-2">
-                <span>Running Total:</span>
-                <span>₹{totalAmount}</span>
               </div>
 
               <textarea
@@ -282,20 +305,23 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
               />
               <div>
                 <label className="block text-slate-300 text-xs font-bold mb-1">Voice Note (optional)</label>
-                <input
-                  type="file"
-                  accept="audio/*"
-                  onChange={e => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = () => setVoiceNoteUrl(reader.result as string);
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                  className="w-full text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-violet-400 hover:file:bg-slate-700"
-                />
-                {voiceNoteUrl && <audio src={voiceNoteUrl} controls className="w-full mt-2 h-8" />}
+                {!voiceNoteUrl ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={isRecording ? stopRecording : startRecording}
+                      className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${isRecording ? 'bg-rose-500 hover:bg-rose-400 text-white' : 'bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 border border-violet-500/30'}`}
+                    >
+                      {isRecording ? <><Square className="w-4 h-4" /> Stop</> : <><Mic className="w-4 h-4" /> Record</>}
+                    </button>
+                    {isRecording && <span className="text-[11px] text-rose-400 font-bold animate-pulse">● Recording...</span>}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <audio src={voiceNoteUrl} controls className="flex-1 h-9" />
+                    <button type="button" onClick={() => setVoiceNoteUrl('')} className="text-rose-400 hover:text-rose-300 text-xs font-bold">Remove</button>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-2">
@@ -331,21 +357,18 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
                   <thead className="bg-slate-800/60 text-slate-300 uppercase">
                     <tr>
                       <th className="px-2 py-1.5 text-left">Product</th>
-                      <th className="px-2 py-1.5 text-center">Qty</th>
-                      <th className="px-2 py-1.5 text-right">Amount (₹)</th>
+                      <th className="px-2 py-1.5 text-right">Qty</th>
                     </tr>
                   </thead>
                   <tbody>
                     {viewOrder.items.map((it, i) => (
                       <tr key={i} className="border-t border-slate-800/40">
                         <td className="px-2 py-1 text-slate-200">{it.product_name}</td>
-                        <td className="px-2 py-1 text-center text-slate-300">{it.qty} x {it.uom}</td>
-                        <td className="px-2 py-1 text-right text-amber-400 font-mono font-bold">₹{it.amount}</td>
+                        <td className="px-2 py-1 text-right text-slate-300">{it.qty} x {it.uom}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                <div className="text-right text-sm font-extrabold text-slate-100 mt-2 border-t border-slate-800 pt-2">Total: ₹{viewOrder.total_amount}</div>
               </div>
               {viewOrder.remarks && (
                 <div>
