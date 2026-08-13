@@ -24,6 +24,7 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
   const [remarks, setRemarks] = useState('');
   const [voiceNoteUrl, setVoiceNoteUrl] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [viewOrder, setViewOrder] = useState<Order | null>(null);
 
   const addItemRow = () => {
     setItems([...items, { id: `line-${crypto.randomUUID ? crypto.randomUUID() : Date.now() + Math.random()}`, product_id: '', product_name: '', uom: '', qty: 1, rate: 0, amount: 0 }]);
@@ -168,6 +169,7 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
                 </div>
                 {order.remarks && <p className="text-[11px] text-slate-500">Remarks: {order.remarks}</p>}
                 <div className="flex items-center gap-2 pt-2">
+                  <button onClick={() => setViewOrder(order)} className="text-[11px] font-bold text-slate-300 hover:text-slate-100 hover:underline">View</button>
                   {order.status === 'pending' && (
                     <>
                       <button onClick={() => openEdit(order)} className="text-[11px] font-bold text-teal-400 hover:underline">Edit</button>
@@ -299,6 +301,66 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
               <div className="flex justify-end gap-2">
                 <button onClick={() => { setShowModal(false); setEditingId(null); }} className="px-4 py-2 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800" type="button">Cancel</button>
                 <button onClick={handleSaveOrder} className="px-4 py-2 rounded-xl text-xs font-extrabold text-white bg-violet-600 hover:bg-violet-500" type="button">Save Order</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Order Dialog */}
+      {viewOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm" onClick={() => setViewOrder(null)}>
+          <div className="glass-panel w-full max-w-2xl rounded-2xl p-6 relative border border-slate-700 shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-lg font-bold text-slate-100">Order #{viewOrder.order_no}</h3>
+                <p className="text-xs text-slate-400">{new Date(viewOrder.order_date).toLocaleString('en-IN')}</p>
+              </div>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${viewOrder.status === 'billed' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'}`}>
+                {viewOrder.status}
+              </span>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-slate-300 text-xs font-bold mb-1">Customer Name</label>
+                <p className="text-sm font-bold text-slate-100">{viewOrder.customer_name}</p>
+              </div>
+              <div>
+                <label className="block text-slate-300 text-xs font-bold mb-1">Line Items</label>
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-800/60 text-slate-300 uppercase">
+                    <tr>
+                      <th className="px-2 py-1.5 text-left">Product</th>
+                      <th className="px-2 py-1.5 text-center">Qty</th>
+                      <th className="px-2 py-1.5 text-right">Amount (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {viewOrder.items.map((it, i) => (
+                      <tr key={i} className="border-t border-slate-800/40">
+                        <td className="px-2 py-1 text-slate-200">{it.product_name}</td>
+                        <td className="px-2 py-1 text-center text-slate-300">{it.qty} x {it.uom}</td>
+                        <td className="px-2 py-1 text-right text-amber-400 font-mono font-bold">₹{it.amount}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="text-right text-sm font-extrabold text-slate-100 mt-2 border-t border-slate-800 pt-2">Total: ₹{viewOrder.total_amount}</div>
+              </div>
+              {viewOrder.remarks && (
+                <div>
+                  <label className="block text-slate-300 text-xs font-bold mb-1">Remarks</label>
+                  <p className="text-sm text-slate-400">{viewOrder.remarks}</p>
+                </div>
+              )}
+              {viewOrder.voice_note_url && (
+                <div>
+                  <label className="block text-slate-300 text-xs font-bold mb-1">Voice Note</label>
+                  <audio src={viewOrder.voice_note_url} controls className="w-full h-10" />
+                </div>
+              )}
+              <div className="flex justify-end">
+                <button onClick={() => setViewOrder(null)} className="px-4 py-2 rounded-xl text-xs font-extrabold text-white bg-violet-600 hover:bg-violet-500" type="button">Close</button>
               </div>
             </div>
           </div>
