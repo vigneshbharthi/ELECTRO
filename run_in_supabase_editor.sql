@@ -10,12 +10,15 @@ CREATE TABLE IF NOT EXISTS public.orders (
     total_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
     status TEXT NOT NULL CHECK (status IN ('pending','billed')) DEFAULT 'pending',
     remarks TEXT,
+    voice_note_url TEXT,
     billed_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS voice_note_url TEXT;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "Allow all access to orders" ON public.orders FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow all access to orders" ON public.orders;
+CREATE POLICY "Allow all access to orders" ON public.orders FOR ALL USING (true) WITH CHECK (true);
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.orders TO anon;
 CREATE INDEX IF NOT EXISTS idx_orders_order_man_id ON public.orders(order_man_id);
 

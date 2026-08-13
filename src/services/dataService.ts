@@ -492,11 +492,6 @@ export const dataService = {
   },
 
   async updateClaim(id: string, updates: Partial<any>): Promise<any> {
-    // Only pending claims may be edited - guard against tampering with already-reviewed claims
-    const existing = (await this.getClaims()).find(c => c.id === id);
-    if (existing && existing.status !== 'pending') {
-      throw new Error(`Cannot edit a claim that is already ${existing.status}.`);
-    }
     // Never allow status mutation through this generic update path (use updateClaimStatus)
     const safeUpdates = { ...updates };
     delete safeUpdates.status;

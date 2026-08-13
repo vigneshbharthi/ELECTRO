@@ -83,7 +83,8 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
         customer_name: orderData.customer_name,
         items: orderData.items,
         total_amount: orderData.total_amount,
-        remarks: orderData.remarks
+        remarks: orderData.remarks,
+        voice_note_url: orderData.voice_note_url
       });
       setEditingId(null);
     } else {
