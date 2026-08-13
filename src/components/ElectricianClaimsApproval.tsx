@@ -230,28 +230,32 @@ export const ElectricianClaimsApproval: React.FC<ElectricianClaimsApprovalProps>
                 )}
               </div>
 
+              {/* Edit (Admin only) - available for all tabs */}
+              <div className="pt-3 border-t border-slate-800/80 space-y-2">
+                <button
+                  onClick={async () => {
+                    if (!onUpdateClaim) return;
+                    const newBillNo = prompt('Bill / Invoice Number:', claim.bill_no);
+                    const newBillAmountStr = prompt('Total Bill Amount (₹):', String(claim.bill_amount));
+                    const newRemarks = prompt('Remarks / Particulars:', claim.remarks || '');
+                    const updates: Partial<ElectricianClaim> = {};
+                    if (newBillNo !== null) updates.bill_no = newBillNo;
+                    if (newBillAmountStr !== null) {
+                      const amt = Number(newBillAmountStr);
+                      if (!isNaN(amt) && amt > 0) updates.bill_amount = amt;
+                    }
+                    if (newRemarks !== null) updates.remarks = newRemarks || '';
+                    if (Object.keys(updates).length > 0) await onUpdateClaim(claim.id, updates);
+                  }}
+                  className="w-full py-1.5 rounded-xl bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 border border-violet-500/30 font-bold text-[11px] transition-all"
+                >
+                  Edit Claim Details
+                </button>
+              </div>
+
               {/* Approval Actions */}
               {activeTab === 'pending' && (
                 <div className="pt-3 border-t border-slate-800/80 space-y-2">
-                  <button
-                    onClick={async () => {
-                      if (!onUpdateClaim) return;
-                      const newBillNo = prompt('Bill / Invoice Number:', claim.bill_no);
-                      const newBillAmountStr = prompt('Total Bill Amount (₹):', String(claim.bill_amount));
-                      const newRemarks = prompt('Remarks / Particulars:', claim.remarks || '');
-                      const updates: Partial<ElectricianClaim> = {};
-                      if (newBillNo !== null) updates.bill_no = newBillNo;
-                      if (newBillAmountStr !== null) {
-                        const amt = Number(newBillAmountStr);
-                        if (!isNaN(amt) && amt > 0) updates.bill_amount = amt;
-                      }
-                      if (newRemarks !== null) updates.remarks = newRemarks || '';
-                      if (Object.keys(updates).length > 0) await onUpdateClaim(claim.id, updates);
-                    }}
-                    className="w-full py-1.5 rounded-xl bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 border border-violet-500/30 font-bold text-[11px] transition-all"
-                  >
-                    Edit Claim Details
-                  </button>
                   <input
                     type="text"
                     placeholder="Optional rejection remarks..."

@@ -22,6 +22,7 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
   const [customerName, setCustomerName] = useState('');
   const [items, setItems] = useState<{ id: string; product_id: string; product_name: string; uom: string; qty: number; rate: number; amount: number; searchText?: string }[]>([]);
   const [remarks, setRemarks] = useState('');
+  const [voiceNoteUrl, setVoiceNoteUrl] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const addItemRow = () => {
@@ -73,6 +74,7 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
       total_amount: totalAmount,
       status: 'pending' as 'pending',
       remarks: remarks.trim(),
+      voice_note_url: voiceNoteUrl || '',
       order_date: new Date().toISOString()
     };
 
@@ -91,6 +93,7 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
     setCustomerName('');
     setItems([]);
     setRemarks('');
+    setVoiceNoteUrl('');
   };
 
   const openEdit = (order: Order) => {
@@ -107,6 +110,7 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
       amount: it.amount
     })));
     setShowModal(true);
+    setVoiceNoteUrl(order.voice_note_url || '');
   };
 
   return (
@@ -153,7 +157,7 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
                       {order.items.map((it, i) => (
                         <tr key={i} className="border-b border-slate-800/40 last:border-0">
                           <td className="py-1 text-slate-300">{it.product_name}</td>
-                          <td className="py-1 text-slate-400">{it.qty} x ₹{it.rate}</td>
+                          <td className="py-1 text-slate-400">{it.qty} x {it.uom}</td>
                           <td className="py-1 text-right text-amber-400 font-mono font-bold">₹{it.amount}</td>
                         </tr>
                       ))}
@@ -273,6 +277,23 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
                 onChange={e => setRemarks(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl glass-input text-xs h-20 resize-none"
               />
+              <div>
+                <label className="block text-slate-300 text-xs font-bold mb-1">Voice Note (optional)</label>
+                <input
+                  type="file"
+                  accept="audio/*"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = () => setVoiceNoteUrl(reader.result as string);
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="w-full text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-violet-400 hover:file:bg-slate-700"
+                />
+                {voiceNoteUrl && <audio src={voiceNoteUrl} controls className="w-full mt-2 h-8" />}
+              </div>
 
               <div className="flex justify-end gap-2">
                 <button onClick={() => { setShowModal(false); setEditingId(null); }} className="px-4 py-2 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800" type="button">Cancel</button>

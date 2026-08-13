@@ -108,6 +108,7 @@ export interface Order {
   total_amount: number;
   status: 'pending' | 'billed';
   remarks?: string;
+  voice_note_url?: string;
   billed_at?: string;
   created_at?: string;
   updated_at?: string;
