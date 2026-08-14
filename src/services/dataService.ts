@@ -496,6 +496,57 @@ export const dataService = {
     const safeUpdates = { ...updates };
     delete safeUpdates.status;
     delete safeUpdates.processed_date;
+
+    // If this is an already-approved claim and admin edits bill_amount / claimed_points,
+    // we must keep the points ledger and the electrician's points_balance in sync.
+    const claims = await this.getClaims();
+    const existingClaim = claims.find(c => c.id === id);
+    const amountChanged = existingClaim && existingClaim.status === 'approved'
+      && (safeUpdates.bill_amount !== undefined && Number(safeUpdates.bill_amount) !== Number(existingClaim.bill_amount));
+
+    if (amountChanged && existingClaim) {
+      const newBillAmount = Number(safeUpdates.bill_amount);
+      const settings = await this.getAppSettings();
+      const percent = (settings?.pointsPercent && !Number.isNaN(settings.pointsPercent)) ? settings.pointsPercent : 1;
+      const newClaimedPoints = Math.floor(newBillAmount * (percent / 100));
+      const oldClaimedPoints = Number(existingClaim.claimed_points) || 0;
+      const pointDiff = newClaimedPoints - oldClaimedPoints;
+
+      safeUpdates.bill_amount = newBillAmount;
+      safeUpdates.claimed_points = newClaimedPoints;
+
+      // Find the original ledger transaction for this claim
+      const transactions = await this.getTransactions();
+      const originalTx = transactions.find(t =>
+        t.electrician_id === existingClaim.electrician_id &&
+        (t.particular || '').includes(`Bill #${existingClaim.bill_no}`)
+      );
+
+      if (pointDiff !== 0 && originalTx) {
+        // Post an adjustment transaction (debit the over-credited, or credit the under-credited)
+        const adjustment: Omit<PointTransaction, 'id' | 'created_at'> = {
+          electrician_id: existingClaim.electrician_id,
+          electrician_name: existingClaim.electrician_name,
+          date: new Date().toISOString(),
+          particular: pointDiff > 0
+            ? `Bill Amount Revised: Bill #${existingClaim.bill_no} (₹${existingClaim.bill_amount.toLocaleString('en-IN')} → ₹${newBillAmount.toLocaleString('en-IN')})`
+            : `Bill Amount Revised: Bill #${existingClaim.bill_no} (₹${existingClaim.bill_amount.toLocaleString('en-IN')} → ₹${newBillAmount.toLocaleString('en-IN')})`,
+          debit_points: pointDiff < 0 ? Math.abs(pointDiff) : 0,
+          credit_points: pointDiff > 0 ? pointDiff : 0
+        };
+        await this.addTransaction(adjustment);
+      } else if (pointDiff !== 0 && !originalTx) {
+        // No original tx found (rare) - just credit/debit fresh
+        await this.addTransaction({
+          electrician_id: existingClaim.electrician_id,
+          electrician_name: existingClaim.electrician_name,
+          date: new Date().toISOString(),
+          particular: `Bill Amount Revised: Bill #${existingClaim.bill_no}`,
+          debit_points: pointDiff < 0 ? Math.abs(pointDiff) : 0,
+          credit_points: pointDiff > 0 ? pointDiff : 0
+        });
+      }
+    }
     try {
       const { data, error } = await supabase.from('electrician_claims').update(safeUpdates).eq('id', id).select().single();
       if (!error && data) {

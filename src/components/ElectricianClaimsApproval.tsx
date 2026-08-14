@@ -25,6 +25,10 @@ export const ElectricianClaimsApproval: React.FC<ElectricianClaimsApprovalProps>
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [selectedInvoiceImage, setSelectedInvoiceImage] = useState<string | null>(null);
   const [rejectRemarks, setRejectRemarks] = useState<{ [id: string]: string }>({});
+  const [editingClaim, setEditingClaim] = useState<ElectricianClaim | null>(null);
+  const [editBillNo, setEditBillNo] = useState('');
+  const [editBillAmount, setEditBillAmount] = useState<number | ''>('');
+  const [editRemarks, setEditRemarks] = useState('');
 
   // Submit Claim Modal Form State (Clean - No Pre-filling!)
   const [selectedElectricianId, setSelectedElectricianId] = useState(electricians[0]?.id || '');
@@ -233,19 +237,12 @@ export const ElectricianClaimsApproval: React.FC<ElectricianClaimsApprovalProps>
               {/* Edit (Admin only) - available for all tabs */}
               <div className="pt-3 border-t border-slate-800/80 space-y-2">
                 <button
-                  onClick={async () => {
+                  onClick={() => {
                     if (!onUpdateClaim) return;
-                    const newBillNo = prompt('Bill / Invoice Number:', claim.bill_no);
-                    const newBillAmountStr = prompt('Total Bill Amount (₹):', String(claim.bill_amount));
-                    const newRemarks = prompt('Remarks / Particulars:', claim.remarks || '');
-                    const updates: Partial<ElectricianClaim> = {};
-                    if (newBillNo !== null) updates.bill_no = newBillNo;
-                    if (newBillAmountStr !== null) {
-                      const amt = Number(newBillAmountStr);
-                      if (!isNaN(amt) && amt > 0) updates.bill_amount = amt;
-                    }
-                    if (newRemarks !== null) updates.remarks = newRemarks || '';
-                    if (Object.keys(updates).length > 0) await onUpdateClaim(claim.id, updates);
+                    setEditingClaim(claim);
+                    setEditBillNo(claim.bill_no);
+                    setEditBillAmount(claim.bill_amount);
+                    setEditRemarks(claim.remarks || '');
                   }}
                   className="w-full py-1.5 rounded-xl bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 border border-violet-500/30 font-bold text-[11px] transition-all"
                 >
@@ -402,6 +399,104 @@ export const ElectricianClaimsApproval: React.FC<ElectricianClaimsApprovalProps>
                 className="w-full py-3 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-extrabold text-xs shadow-lg shadow-teal-500/20 hover:brightness-110 transition-all"
               >
                 Submit Claim to Queue
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Claim Dialog (Admin only) */}
+      {editingClaim && onUpdateClaim && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn" onClick={() => setEditingClaim(null)}>
+          <div className="glass-panel w-full max-w-md rounded-2xl p-6 relative border border-slate-700 shadow-2xl space-y-4" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => setEditingClaim(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+              type="button"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center space-x-3 border-b border-slate-800 pb-3">
+              <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-center text-violet-400">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-100 text-base">Edit Claim Details</h3>
+                <p className="text-xs text-slate-400">
+                  {editingClaim.electrician_name} · {editingClaim.status === 'approved' ? 'Adjusting amount will recalculate points.' : 'Pending claim'}
+                </p>
+              </div>
+            </div>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!editBillNo.trim()) { alert('Bill / Invoice Number is required'); return; }
+                const amt = Number(editBillAmount);
+                if (!amt || amt <= 0) { alert('Bill Amount must be greater than zero'); return; }
+                const newClaimedPoints = Math.floor(amt * (pointsPercent / 100));
+                if (editingClaim.status === 'approved' && amt !== editingClaim.bill_amount) {
+                  const ok = confirm(
+                    `Bill Amount changed (₹${editingClaim.bill_amount.toLocaleString('en-IN')} → ₹${amt.toLocaleString('en-IN')}).\n\n` +
+                    `Points will be adjusted: ${editingClaim.claimed_points} → ${newClaimedPoints} pts\n` +
+                    `(${editingClaim.electrician_name}'s balance will be updated automatically.)\n\nContinue?`
+                  );
+                  if (!ok) return;
+                }
+                await onUpdateClaim(editingClaim.id, {
+                  bill_no: editBillNo.trim(),
+                  bill_amount: amt,
+                  claimed_points: newClaimedPoints,
+                  remarks: editRemarks
+                });
+                setEditingClaim(null);
+              }}
+              className="space-y-4 text-xs"
+            >
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Bill / Invoice Number *</label>
+                <input
+                  type="text"
+                  required
+                  value={editBillNo}
+                  onChange={e => setEditBillNo(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl glass-input font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Total Bill Amount (₹) *</label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  value={editBillAmount}
+                  onChange={e => setEditBillAmount(e.target.value ? Number(e.target.value) : '')}
+                  className="w-full px-3 py-2 rounded-xl glass-input font-mono font-bold text-teal-300"
+                />
+                {editingClaim.status === 'approved' && Number(editBillAmount) > 0 && Number(editBillAmount) !== editingClaim.bill_amount && (
+                  <p className="text-[11px] text-amber-300 mt-1 font-bold">
+                    New points will be: <span className="font-mono">{Math.floor(Number(editBillAmount) * (pointsPercent / 100))} pts</span>
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Remarks / Particulars</label>
+                <input
+                  type="text"
+                  value={editRemarks}
+                  onChange={e => setEditRemarks(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl glass-input"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-slate-950 font-extrabold text-xs shadow-lg shadow-violet-500/20 hover:brightness-110 transition-all"
+              >
+                Save Changes
               </button>
             </form>
           </div>
