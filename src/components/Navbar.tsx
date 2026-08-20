@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Zap, Database, FileInput, BarChart3, Settings, ShieldAlert, LogOut, CheckCircle2, ChevronDown, Users, Package, Receipt, Award, FileSpreadsheet, Sliders, UserCheck, Menu, X, Building2 } from 'lucide-react';
+import { Zap, Database, FileInput, BarChart3, Settings, ShieldAlert, LogOut, CheckCircle2, ChevronDown, Users, Package, Receipt, Award, FileSpreadsheet, Sliders, UserCheck, Menu, X, Building2, Contact } from 'lucide-react';
 import { UserAuth } from '../types';
 
 interface NavbarProps {
@@ -46,6 +46,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       items: [
         { id: 'electricians', label: 'Electrician Master', icon: Users, desc: 'Electrician Profiles & Passwords' },
         { id: 'ordermen', label: 'Order Man Master', icon: UserCheck, desc: 'Sales Credentials & Regions' },
+        { id: 'customers', label: 'Customer Master', icon: Contact, desc: 'Customer Profiles for Order Book' },
         { id: 'products', label: 'Product Master (Order Man)', icon: Package, desc: 'Product Prices & CSV Upload' }
       ]
     },

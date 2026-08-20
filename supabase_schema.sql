@@ -5,6 +5,7 @@
 DROP TABLE IF EXISTS public.electrician_claims CASCADE;
 DROP TABLE IF EXISTS public.redemptions CASCADE;
 DROP TABLE IF EXISTS public.point_transactions CASCADE;
+DROP TABLE IF EXISTS public.customers CASCADE;
 DROP TABLE IF EXISTS public.products CASCADE;
 DROP TABLE IF EXISTS public.order_men CASCADE;
 DROP TABLE IF EXISTS public.electricians CASCADE;
@@ -43,7 +44,20 @@ CREATE TABLE public.order_men (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. PRODUCTS TABLE (ORDER MAN CATALOG - NO SAMPLE DATA)
+-- 3. CUSTOMERS TABLE (ORDER BOOK CUSTOMERS - NO SAMPLE DATA)
+CREATE TABLE public.customers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    mobile TEXT,
+    email TEXT,
+    address TEXT,
+    city TEXT,
+    gstin TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 4. PRODUCTS TABLE (ORDER MAN CATALOG - NO SAMPLE DATA)
 CREATE TABLE public.products (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
@@ -54,7 +68,7 @@ CREATE TABLE public.products (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. POINT TRANSACTIONS / LEDGER TABLE
+-- 5. POINT TRANSACTIONS / LEDGER TABLE
 CREATE TABLE public.point_transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     electrician_id UUID REFERENCES public.electricians(id) ON DELETE SET NULL,
@@ -66,7 +80,7 @@ CREATE TABLE public.point_transactions (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. REDEMPTIONS TABLE
+-- 6. REDEMPTIONS TABLE
 CREATE TABLE public.redemptions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     electrician_id UUID REFERENCES public.electricians(id) ON DELETE SET NULL,
@@ -80,7 +94,7 @@ CREATE TABLE public.redemptions (
     remarks TEXT
 );
 
--- 6. ELECTRICIAN POINT CLAIMS APPROVAL TABLE
+-- 7. ELECTRICIAN POINT CLAIMS APPROVAL TABLE
 CREATE TABLE public.electrician_claims (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     electrician_id UUID REFERENCES public.electricians(id) ON DELETE SET NULL,
@@ -96,7 +110,7 @@ CREATE TABLE public.electrician_claims (
     remarks TEXT
 );
 
--- 7. GLOBAL APPLICATION SETTINGS TABLE (single-row, cross-device sync)
+-- 8. GLOBAL APPLICATION SETTINGS TABLE (single-row, cross-device sync)
 CREATE TABLE public.app_settings (
     id INT PRIMARY KEY DEFAULT 1,
     points_percent NUMERIC(5, 2) NOT NULL DEFAULT 1.00,
@@ -113,6 +127,7 @@ ON CONFLICT (id) DO NOTHING;
 -- ENABLE ROW LEVEL SECURITY
 ALTER TABLE public.electricians ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_men ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.point_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.redemptions ENABLE ROW LEVEL SECURITY;
@@ -127,6 +142,7 @@ CREATE INDEX IF NOT EXISTS idx_electrician_claims_electrician_id ON public.elect
 -- CREATE RLS POLICIES FOR FULL APP ACCESS
 CREATE POLICY "Allow all access to electricians" ON public.electricians FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access to order_men" ON public.order_men FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access to customers" ON public.customers FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access to products" ON public.products FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access to point_transactions" ON public.point_transactions FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access to redemptions" ON public.redemptions FOR ALL USING (true) WITH CHECK (true);
@@ -137,6 +153,7 @@ CREATE POLICY "Allow all access to app_settings" ON public.app_settings FOR ALL 
 GRANT USAGE ON SCHEMA public TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.electricians TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.order_men TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.customers TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.products TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.point_transactions TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.redemptions TO anon;

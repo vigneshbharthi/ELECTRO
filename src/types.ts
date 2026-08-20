@@ -37,6 +37,18 @@ export interface Product {
   created_at?: string;
 }
 
+export interface Customer {
+  id: string;
+  name: string;
+  mobile?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  gstin?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface BillEntry {
   id: string;
   bill_no: string;
@@ -103,6 +115,8 @@ export interface Order {
   order_man_id: string;
   order_man_name?: string;
   customer_name: string;
+  customer_id?: string;
+  customer_mobile?: string;
   order_date: string;
   items: OrderItem[];
   total_amount: number;

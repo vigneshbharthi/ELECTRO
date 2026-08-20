@@ -1,4 +1,26 @@
 ALTER TABLE public.electricians ADD COLUMN IF NOT EXISTS status TEXT NOT NULL CHECK (status IN ('active', 'inactive')) DEFAULT 'active';
+
+-- CUSTOMERS TABLE (Order Book customer master)
+CREATE TABLE IF NOT EXISTS public.customers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    mobile TEXT,
+    email TEXT,
+    address TEXT,
+    city TEXT,
+    gstin TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to customers" ON public.customers;
+CREATE POLICY "Allow all access to customers" ON public.customers FOR ALL USING (true) WITH CHECK (true);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.customers TO anon;
+
+-- Link orders to customer master (optional customer_id / customer_mobile snapshot)
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS customer_id TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS customer_mobile TEXT;
+
 CREATE TABLE IF NOT EXISTS public.orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_no TEXT NOT NULL UNIQUE,

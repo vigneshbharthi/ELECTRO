@@ -222,7 +222,7 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
     setSyncResult(null);
     try {
       const r = await dataService.syncLocalToCloud();
-      const pushed = r.electricians + r.orderMen + r.products + r.claims + r.transactions + r.redemptions + r.orders;
+      const pushed = r.electricians + r.orderMen + r.products + r.customers + r.claims + r.transactions + r.redemptions + r.orders;
       if (pushed === 0) {
         setSyncResult('No new local records to sync — everything is already in cloud.');
       } else {
@@ -230,6 +230,7 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
         if (r.electricians) msg += `  • Electricians: ${r.electricians}\n`;
         if (r.orderMen) msg += `  • Order Men: ${r.orderMen}\n`;
         if (r.products) msg += `  • Products: ${r.products}\n`;
+        if (r.customers) msg += `  • Customers: ${r.customers}\n`;
         if (r.claims) msg += `  • Claims: ${r.claims}\n`;
         if (r.transactions) msg += `  • Transactions: ${r.transactions}\n`;
         if (r.redemptions) msg += `  • Redemptions: ${r.redemptions}\n`;

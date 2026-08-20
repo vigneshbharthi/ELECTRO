@@ -1,10 +1,11 @@
 ﻿import { supabase } from '../lib/supabase';
-import { Electrician, OrderMan, Product, PointTransaction, Redemption, Order, OrderItem } from '../types';
+import { Electrician, OrderMan, Product, PointTransaction, Redemption, Order, OrderItem, Customer } from '../types';
 
 // Clean empty initial data arrays for fresh production setup
 const initialElectricians: Electrician[] = [];
 const initialOrderMen: OrderMan[] = [];
 const initialProducts: Product[] = [];
+const initialCustomers: Customer[] = [];
 const initialTransactions: PointTransaction[] = [];
 const initialRedemptions: Redemption[] = [];
 const initialClaims: any[] = [];
@@ -250,6 +251,136 @@ export const dataService = {
 
     const current = getLocal<Product[]>('products', initialProducts);
     setLocal('products', current.filter(p => p.id !== id));
+    return true;
+  },
+
+  async deleteProducts(ids: string[]): Promise<boolean> {
+    if (!ids || ids.length === 0) return false;
+    try {
+      const { error } = await supabase.from('products').delete().in('id', ids);
+      if (!error) {
+        const current = getLocal<Product[]>('products', initialProducts);
+        setLocal('products', current.filter(p => !ids.includes(p.id)));
+        return true;
+      }
+    } catch (e) {
+      console.warn('Supabase bulk product delete failed:', e);
+    }
+
+    const current = getLocal<Product[]>('products', initialProducts);
+    setLocal('products', current.filter(p => !ids.includes(p.id)));
+    return true;
+  },
+
+  // CUSTOMERS CRUD SERVICES
+  async getCustomers(): Promise<Customer[]> {
+    let supabaseCustomers: Customer[] = [];
+    try {
+      const { data, error } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
+      if (!error && data) {
+        supabaseCustomers = data as Customer[];
+      }
+    } catch (e) {
+      console.warn('Supabase fetch customers failed, fallback to local:', e);
+    }
+
+    const localCustomers = getLocal<Customer[]>('customers', initialCustomers);
+    const map = new Map<string, Customer>();
+    [...supabaseCustomers, ...localCustomers].forEach(item => {
+      if (item && item.id) {
+        if (!map.has(item.id)) {
+          map.set(item.id, item);
+        }
+      }
+    });
+
+    const merged = Array.from(map.values());
+    setLocal('customers', merged);
+    return merged;
+  },
+
+  async addCustomer(customer: Omit<Customer, 'id' | 'created_at' | 'updated_at'>): Promise<Customer> {
+    const newCustomer: Customer = {
+      ...customer,
+      id: crypto.randomUUID ? crypto.randomUUID() : `cust-${Date.now()}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    try {
+      const { data, error } = await supabase.from('customers').insert([newCustomer]).select().single();
+      if (!error && data) {
+        const current = getLocal<Customer[]>('customers', initialCustomers);
+        setLocal('customers', [data, ...current]);
+        return data as Customer;
+      }
+    } catch (e) {
+      console.warn('Supabase customer insert failed:', e);
+    }
+
+    const current = getLocal<Customer[]>('customers', initialCustomers);
+    setLocal('customers', [newCustomer, ...current]);
+    return newCustomer;
+  },
+
+  async updateCustomer(id: string, updates: Partial<Customer>): Promise<Customer | null> {
+    const updatedObj = { ...updates, updated_at: new Date().toISOString() };
+    try {
+      const { data, error } = await supabase.from('customers').update(updatedObj).eq('id', id).select().single();
+      if (!error && data) {
+        const current = getLocal<Customer[]>('customers', initialCustomers);
+        setLocal('customers', current.map(c => c.id === id ? (data as Customer) : c));
+        return data as Customer;
+      }
+    } catch (e) {
+      console.warn('Supabase customer update failed:', e);
+    }
+
+    const current = getLocal<Customer[]>('customers', initialCustomers);
+    let result: Customer | null = null;
+    const list = current.map(c => {
+      if (c.id === id) {
+        result = { ...c, ...updatedObj };
+        return result;
+      }
+      return c;
+    });
+    setLocal('customers', list);
+    return result;
+  },
+
+  async deleteCustomer(id: string): Promise<boolean> {
+    try {
+      const { error } = await supabase.from('customers').delete().eq('id', id);
+      if (!error) {
+        const current = getLocal<Customer[]>('customers', initialCustomers);
+        setLocal('customers', current.filter(c => c.id !== id));
+        return true;
+      }
+    } catch (e) {
+      console.warn('Supabase customer delete failed:', e);
+    }
+
+    const current = getLocal<Customer[]>('customers', initialCustomers);
+    setLocal('customers', current.filter(c => c.id !== id));
+    return true;
+  },
+
+  async deleteCustomers(ids: string[]): Promise<boolean> {
+    if (!ids || ids.length === 0) return false;
+    try {
+      const { error } = await supabase.from('customers').delete().in('id', ids);
+      if (!error) {
+        const current = getLocal<Customer[]>('customers', initialCustomers);
+        setLocal('customers', current.filter(c => !ids.includes(c.id)));
+        return true;
+      }
+    } catch (e) {
+      console.warn('Supabase bulk customer delete failed:', e);
+    }
+
+    const current = getLocal<Customer[]>('customers', initialCustomers);
+    setLocal('customers', current.filter(c => !ids.includes(c.id)));
     return true;
   },
 
@@ -881,8 +1012,8 @@ export const dataService = {
 
   // ONE-TIME LOCAL -> SUPABASE MIGRATION (call from Settings page)
   // Pushes any local-only records to Supabase so other devices can see them.
-  async syncLocalToCloud(): Promise<{ electricians: number; orderMen: number; products: number; claims: number; transactions: number; redemptions: number; orders: number; errors: string[] }> {
-    const result = { electricians: 0, orderMen: 0, products: 0, claims: 0, transactions: 0, redemptions: 0, orders: 0, errors: [] as string[] };
+  async syncLocalToCloud(): Promise<{ electricians: number; orderMen: number; products: number; customers: number; claims: number; transactions: number; redemptions: number; orders: number; errors: string[] }> {
+    const result = { electricians: 0, orderMen: 0, products: 0, customers: 0, claims: 0, transactions: 0, redemptions: 0, orders: 0, errors: [] as string[] };
 
     const push = async (table: string, records: any[], matchKey: string) => {
       if (!records || records.length === 0) return;
@@ -899,6 +1030,7 @@ export const dataService = {
           if (table === 'electricians') result.electricians += toInsert.length;
           if (table === 'order_men') result.orderMen += toInsert.length;
           if (table === 'products') result.products += toInsert.length;
+          if (table === 'customers') result.customers += toInsert.length;
           if (table === 'electrician_claims') result.claims += toInsert.length;
           if (table === 'point_transactions') result.transactions += toInsert.length;
           if (table === 'redemptions') result.redemptions += toInsert.length;
@@ -912,6 +1044,7 @@ export const dataService = {
     await push('electricians', getLocal<Electrician[]>('electricians', []), 'mobile');
     await push('order_men', getLocal<OrderMan[]>('order_men', []), 'mobile');
     await push('products', getLocal<Product[]>('products', []), 'id');
+    await push('customers', getLocal<Customer[]>('customers', []), 'id');
     await push('electrician_claims', getLocal<any[]>('claims', []), 'id');
     await push('point_transactions', getLocal<PointTransaction[]>('transactions', []), 'id');
     await push('redemptions', getLocal<Redemption[]>('redemptions', []), 'id');

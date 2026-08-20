@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Package, Plus, Search, Edit2, Trash2, Tag, Calendar, X, Check, Filter, Upload, Download, FileSpreadsheet } from 'lucide-react';
+import { Package, Plus, Search, Edit2, Trash2, Tag, Calendar, X, Check, Filter, Upload, Download, FileSpreadsheet, Trash } from 'lucide-react';
 import { Product } from '../types';
 
 interface ProductCrudProps {
@@ -7,6 +7,7 @@ interface ProductCrudProps {
   onAdd: (data: Omit<Product, 'id' | 'updated_at' | 'created_at'>) => Promise<void>;
   onUpdate: (id: string, updates: Partial<Product>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onBulkDelete: (ids: string[]) => Promise<void>;
   onBulkAdd: (productsList: Omit<Product, 'id' | 'updated_at' | 'created_at'>[]) => Promise<void>;
 }
 
@@ -15,6 +16,7 @@ export const ProductCrud: React.FC<ProductCrudProps> = ({
   onAdd,
   onUpdate,
   onDelete,
+  onBulkDelete,
   onBulkAdd
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,6 +25,7 @@ export const ProductCrud: React.FC<ProductCrudProps> = ({
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   // CSV Import State
   const [csvRawText, setCsvRawText] = useState('');
@@ -137,6 +140,27 @@ export const ProductCrud: React.FC<ProductCrudProps> = ({
     setIsDeletingId(null);
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAll = () => {
+    const visibleIds = filteredProducts.map(p => p.id);
+    const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.includes(id));
+    setSelectedIds(prev => {
+      const remaining = prev.filter(id => !visibleIds.includes(id));
+      return allSelected ? remaining : [...remaining, ...visibleIds];
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (confirm(`Delete ${selectedIds.length} selected product(s)? This cannot be undone.`)) {
+      await onBulkDelete(selectedIds);
+      setSelectedIds([]);
+    }
+  };
+
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           p.group_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -199,6 +223,17 @@ export const ProductCrud: React.FC<ProductCrudProps> = ({
             <span>Import CSV</span>
           </button>
 
+          {/* Bulk Delete Selected */}
+          {selectedIds.length > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 text-xs font-bold transition-all"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Delete Selected ({selectedIds.length})</span>
+            </button>
+          )}
+
           {/* Add Single Product */}
           <button
             onClick={openAddModal}
@@ -216,6 +251,14 @@ export const ProductCrud: React.FC<ProductCrudProps> = ({
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-slate-800 bg-slate-900/60 text-slate-400 uppercase tracking-wider font-semibold">
+                <th className="py-3.5 px-4 w-10">
+                  <input
+                    type="checkbox"
+                    checked={filteredProducts.length > 0 && filteredProducts.every(p => selectedIds.includes(p.id))}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 accent-teal-500 cursor-pointer"
+                  />
+                </th>
                 <th className="py-3.5 px-4">Product Name</th>
                 <th className="py-3.5 px-4">Group / Category</th>
                 <th className="py-3.5 px-4">UOM</th>
@@ -227,13 +270,21 @@ export const ProductCrud: React.FC<ProductCrudProps> = ({
             <tbody className="divide-y divide-slate-800/60">
               {filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-500">
+                  <td colSpan={7} className="py-8 text-center text-slate-500">
                     No products found matching your search. Use "Import CSV" to upload items in bulk!
                   </td>
                 </tr>
               ) : (
                 filteredProducts.map((product) => (
-                  <tr key={product.id} className="hover:bg-slate-900/40 transition-colors">
+                  <tr key={product.id} className={`hover:bg-slate-900/40 transition-colors ${selectedIds.includes(product.id) ? 'bg-teal-500/5' : ''}`}>
+                    <td className="py-3.5 px-4 w-10">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(product.id)}
+                        onChange={() => toggleSelect(product.id)}
+                        className="w-4 h-4 accent-teal-500 cursor-pointer"
+                      />
+                    </td>
                     <td className="py-3.5 px-4 font-semibold text-slate-100">
                       {product.name}
                     </td>

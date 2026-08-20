@@ -4,6 +4,7 @@ import { Dashboard } from './components/Dashboard';
 import { ElectricianCrud } from './components/ElectricianCrud';
 import { OrderManCrud } from './components/OrderManCrud';
 import { ProductCrud } from './components/ProductCrud';
+import { CustomerCrud } from './components/CustomerCrud';
 import { BillEntryModule } from './components/BillEntryModule';
 import { PointsRedemption } from './components/PointsRedemption';
 import { ElectricianClaimsApproval } from './components/ElectricianClaimsApproval';
@@ -16,7 +17,7 @@ import { OrderBookModule } from './components/OrderBookModule';
 import { OrderBookReport } from './components/OrderBookReport';
 import { AuthModal } from './components/AuthModal';
 import { dataService } from './services/dataService';
-import { Electrician, OrderMan, Product, PointTransaction, Redemption, ElectricianClaim, UserAuth, AppSettings, CompanyProfile, Order, OrderItem } from './types';
+import { Electrician, OrderMan, Product, Customer, PointTransaction, Redemption, ElectricianClaim, UserAuth, AppSettings, CompanyProfile, Order, OrderItem } from './types';
 
 export function App() {
   const [activeModule, setActiveModule] = useState<string>('dashboard');
@@ -118,6 +119,7 @@ export function App() {
   const [electricians, setElectricians] = useState<Electrician[]>([]);
   const [orderMen, setOrderMen] = useState<OrderMan[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [transactions, setTransactions] = useState<PointTransaction[]>([]);
   const [redemptions, setRedemptions] = useState<Redemption[]>([]);
   const [claims, setClaims] = useState<ElectricianClaim[]>([]);
@@ -129,10 +131,11 @@ export function App() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [elecs, oms, prods, txs, reds, clms, ords] = await Promise.all([
+      const [elecs, oms, prods, custs, txs, reds, clms, ords] = await Promise.all([
         dataService.getElectricians(),
         dataService.getOrderMen(),
         dataService.getProducts(),
+        dataService.getCustomers(),
         dataService.getTransactions(),
         dataService.getRedemptions(),
         dataService.getClaims(),
@@ -141,6 +144,7 @@ export function App() {
       setElectricians(elecs);
       setOrderMen(oms);
       setProducts(prods);
+      setCustomers(custs);
       setTransactions(txs);
       setRedemptions(reds);
       setClaims(clms);
@@ -246,6 +250,28 @@ export function App() {
 
   const handleDeleteProduct = async (id: string) => {
     await dataService.deleteProduct(id);
+    await loadData();
+  };
+
+  const handleBulkDeleteProducts = async (ids: string[]) => {
+    await dataService.deleteProducts(ids);
+    await loadData();
+  };
+
+  // CUSTOMERS HANDLERS
+  const handleAddCustomer = async (data: Omit<Customer, 'id' | 'created_at' | 'updated_at'>): Promise<Customer> => {
+    const created = await dataService.addCustomer(data);
+    await loadData();
+    return created;
+  };
+
+  const handleUpdateCustomer = async (id: string, updates: Partial<Customer>) => {
+    await dataService.updateCustomer(id, updates);
+    await loadData();
+  };
+
+  const handleDeleteCustomer = async (id: string) => {
+    await dataService.deleteCustomer(id);
     await loadData();
   };
 
@@ -367,12 +393,14 @@ export function App() {
                     <OrderBookModule
                       orderMan={currentOrderMan}
                       products={products}
+                      customers={customers}
                       orders={orders}
                       settings={settings}
                       onAddOrder={handleAddOrder}
                       onUpdateOrder={handleUpdateOrder}
                       onUpdateOrderStatus={handleUpdateOrderStatus}
                       onDeleteOrder={handleDeleteOrder}
+                      onAddCustomer={handleAddCustomer}
                     />
                   )}
                 </>
@@ -420,7 +448,17 @@ export function App() {
                     onAdd={handleAddProduct}
                     onUpdate={handleUpdateProduct}
                     onDelete={handleDeleteProduct}
+                    onBulkDelete={handleBulkDeleteProducts}
                     onBulkAdd={handleBulkAddProducts}
+                  />
+                )}
+
+                {activeModule === 'customers' && (
+                  <CustomerCrud
+                    customers={customers}
+                    onAdd={handleAddCustomer}
+                    onUpdate={handleUpdateCustomer}
+                    onDelete={handleDeleteCustomer}
                   />
                 )}
 

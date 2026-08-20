@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Award, FileSpreadsheet, Upload, Plus, CheckCircle2, Clock, Image, ArrowUpRight, ArrowDownLeft, Wallet, User, Edit, Trash2, X, AlertTriangle } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Award, FileSpreadsheet, Upload, Plus, CheckCircle2, Clock, Image, ArrowUpRight, ArrowDownLeft, Wallet, User, Edit, Trash2, X, AlertTriangle, Camera } from 'lucide-react';
 import { Electrician, PointTransaction, ElectricianClaim, AppSettings } from '../types';
 
 interface ElectricianPortalProps {
@@ -33,6 +33,12 @@ export const ElectricianPortal: React.FC<ElectricianPortalProps> = ({
   const [remarks, setRemarks] = useState('');
   const [invoiceImagePreview, setInvoiceImagePreview] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Hidden file inputs so mobile users can open the camera directly
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const editCameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const editGalleryInputRef = useRef<HTMLInputElement>(null);
 
   // Edit Claim Form State
   const [editBillNo, setEditBillNo] = useState('');
@@ -407,12 +413,39 @@ export const ElectricianPortal: React.FC<ElectricianPortalProps> = ({
 
               <div>
                 <label className="block text-slate-300 font-medium mb-1">Invoice Image / Photo</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleImageFileChange(e, false)}
-                  className="w-full text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-teal-400 hover:file:bg-slate-700"
-                />
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 text-xs font-bold"
+                  >
+                    <Camera className="w-4 h-4" />
+                    <span>Take Photo</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => galleryInputRef.current?.click()}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>Choose from Gallery</span>
+                  </button>
+                  <input
+                    ref={cameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={(e) => handleImageFileChange(e, false)}
+                  />
+                  <input
+                    ref={galleryInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleImageFileChange(e, false)}
+                  />
+                </div>
                 {invoiceImagePreview && (
                   <div className="mt-2 relative">
                     <img
@@ -493,12 +526,39 @@ export const ElectricianPortal: React.FC<ElectricianPortalProps> = ({
 
               <div>
                 <label className="block text-slate-300 font-medium mb-1">Invoice Image / Photo</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleImageFileChange(e, true)}
-                  className="w-full text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-teal-400 hover:file:bg-slate-700"
-                />
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => editCameraInputRef.current?.click()}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 text-xs font-bold"
+                  >
+                    <Camera className="w-4 h-4" />
+                    <span>Take Photo</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => editGalleryInputRef.current?.click()}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>Choose from Gallery</span>
+                  </button>
+                  <input
+                    ref={editCameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={(e) => handleImageFileChange(e, true)}
+                  />
+                  <input
+                    ref={editGalleryInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleImageFileChange(e, true)}
+                  />
+                </div>
                 {editInvoiceImage && (
                   <div className="mt-2 relative">
                     <img
