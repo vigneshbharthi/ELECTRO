@@ -17,17 +17,12 @@ import { OrderBookModule } from './components/OrderBookModule';
 import { OrderBookReport } from './components/OrderBookReport';
 import { AuthModal } from './components/AuthModal';
 import { dataService } from './services/dataService';
+import { APP_NAME as ENV_APP_NAME } from './lib/appConfig';
 import { Electrician, OrderMan, Product, Customer, PointTransaction, Redemption, ElectricianClaim, UserAuth, AppSettings, CompanyProfile, Order, OrderItem } from './types';
 
 export function App() {
   const [activeModule, setActiveModule] = useState<string>('dashboard');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
-
-  // Dynamic tab title per deployment (VITE_APP_NAME)
-  useEffect(() => {
-    const name = (import.meta.env.VITE_APP_NAME as string) || 'JBS Electro';
-    document.title = `${name} - Electrician & Points Ledger Portal`;
-  }, []);
 
   // User Auth State - Persisted in localStorage so login survives page refresh
   const getInitialAuth = (): UserAuth => {
@@ -44,7 +39,7 @@ export function App() {
 
   // App Settings & Company Profile
   const getInitialSettings = (): AppSettings => {
-    const defaults: AppSettings = { pointsPercent: 1, minBillAmount: 100, appName: 'JBS Electro' };
+    const defaults: AppSettings = { pointsPercent: 1, minBillAmount: 100, appName: ENV_APP_NAME };
     try {
       const stored = localStorage.getItem('jbs_electro_app_settings');
       if (stored) {

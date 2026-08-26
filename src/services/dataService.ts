@@ -1,4 +1,5 @@
 ﻿import { supabase } from '../lib/supabase';
+import { APP_NAME } from '../lib/appConfig';
 import { Electrician, OrderMan, Product, PointTransaction, Redemption, Order, OrderItem, Customer } from '../types';
 
 // Clean empty initial data arrays for fresh production setup
@@ -727,7 +728,7 @@ export const dataService = {
   // COMPANY PROFILE & CREDENTIALS SERVICE
   getCompanyProfile(): any {
     const defaultProfile = {
-      companyName: 'JBS Electro',
+      companyName: APP_NAME,
       gstin: '33AAAAA0000A1Z5',
       phone: '+91 9876543210',
       email: 'support@electro.in',
@@ -752,7 +753,7 @@ export const dataService = {
         return {
           pointsPercent: Number(data.points_percent) || 1,
           minBillAmount: Number(data.min_bill_amount) || 100,
-          appName: data.app_name || 'JBS Electro'
+          appName: data.app_name || APP_NAME
         };
       }
     } catch (e) {

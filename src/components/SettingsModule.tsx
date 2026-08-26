@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Settings, Sliders, Database, Save, CheckCircle2, ShieldCheck, UserPlus, Key, RefreshCw, CloudUpload } from 'lucide-react';
+import { APP_NAME } from '../lib/appConfig';
 import { AppSettings, UserAuth, CompanyProfile } from '../types';
 import { dataService } from '../services/dataService';
 
@@ -109,7 +110,7 @@ const CreateAdminManager: React.FC<{
   onCreate: (profile: CompanyProfile) => void;
 }> = ({ onCreate }) => {
   const [form, setForm] = useState({
-    companyName: 'JBS Electro',
+    companyName: APP_NAME,
     gstin: '',
     phone: '',
     email: '',
@@ -129,7 +130,7 @@ const CreateAdminManager: React.FC<{
       return;
     }
     const profile: CompanyProfile = {
-      companyName: form.companyName.trim() || 'JBS Electro',
+      companyName: form.companyName.trim() || APP_NAME,
       gstin: form.gstin,
       phone: form.phone,
       email: form.email,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Zap, Database, FileInput, BarChart3, Settings, ShieldAlert, LogOut, CheckCircle2, ChevronDown, Users, Package, Receipt, Award, FileSpreadsheet, Sliders, UserCheck, Menu, X, Building2, Contact } from 'lucide-react';
+import { APP_NAME } from '../lib/appConfig';
 import { UserAuth } from '../types';
 
 interface NavbarProps {
@@ -118,7 +119,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <div>
               <span className="text-xl font-extrabold tracking-wider bg-gradient-to-r from-teal-400 via-emerald-300 to-cyan-400 bg-clip-text text-transparent">
-                {import.meta.env.VITE_APP_NAME || 'JBS Electro'}
+                {APP_NAME}
               </span>
               <span className="block text-[9px] uppercase tracking-widest text-slate-400 font-semibold">
                 ERP System
