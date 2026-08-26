@@ -111,14 +111,14 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           
-          {/* Brand Logo */}
+          {/* Brand Logo — dynamic per deployment via VITE_APP_NAME */}
           <div className="flex items-center space-x-3 cursor-pointer shrink-0" onClick={() => setActiveModule('dashboard')}>
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-teal-500/20">
               <Zap className="w-6 h-6 text-slate-950 stroke-[2.5]" />
             </div>
             <div>
               <span className="text-xl font-extrabold tracking-wider bg-gradient-to-r from-teal-400 via-emerald-300 to-cyan-400 bg-clip-text text-transparent">
-                JBS Electro
+                {import.meta.env.VITE_APP_NAME || 'JBS Electro'}
               </span>
               <span className="block text-[9px] uppercase tracking-widest text-slate-400 font-semibold">
                 ERP System
