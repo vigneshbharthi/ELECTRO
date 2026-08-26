@@ -170,7 +170,7 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
     setCustomerName(order.customer_name);
     setCustomerId(order.customer_id || '');
     setCustomerMobile(order.customer_mobile || '');
-    setCustomerSearch(order.customer_name);
+    setCustomerSearch('');
     setRemarks(order.remarks || '');
     setItems(order.items.map(it => ({
       id: it.id || `line-${Date.now()}`,
@@ -189,7 +189,7 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
     setCustomerId(c.id);
     setCustomerName(c.name);
     setCustomerMobile(c.mobile || '');
-    setCustomerSearch(c.name);
+    setCustomerSearch('');
     setShowNewCustomerForm(false);
   };
 
@@ -205,7 +205,7 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
       handleSelectCustomer(created);
     } else {
       setCustomerName(newCustomer.name.trim());
-      setCustomerSearch(newCustomer.name.trim());
+      setCustomerSearch('');
     }
     setShowNewCustomerForm(false);
     setNewCustomer({ name: '', mobile: '', city: '' });
@@ -294,13 +294,15 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
                     type="text"
                     required
                     placeholder="Search or type customer name..."
-                    value={customerSearch}
+                    value={customerSearch || customerName}
                     onChange={e => {
-                      setCustomerSearch(e.target.value);
+                      const val = e.target.value;
+                      setCustomerSearch(val);
+                      setCustomerName('');
                       setCustomerId('');
                       setCustomerMobile('');
                     }}
-                    onFocus={() => setCustomerSearch(customerName || customerSearch)}
+                    onFocus={() => { if (customerName && !customerSearch) setCustomerSearch(customerName); }}
                     className="w-full px-3 py-2 rounded-xl glass-input text-sm pr-10"
                   />
                   <button
