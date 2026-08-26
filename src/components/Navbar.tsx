@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Zap, Database, FileInput, BarChart3, Settings, ShieldAlert, LogOut, CheckCircle2, ChevronDown, Users, Package, Receipt, Award, FileSpreadsheet, Sliders, UserCheck, Menu, X, Building2, Contact } from 'lucide-react';
 import { APP_NAME } from '../lib/appConfig';
-import { UserAuth } from '../types';
+import { UserAuth, CompanyProfile } from '../types';
 
 interface NavbarProps {
   activeModule: string;
@@ -9,6 +9,7 @@ interface NavbarProps {
   auth: UserAuth;
   setAuth: React.Dispatch<React.SetStateAction<UserAuth>>;
   onOpenAuthModal: () => void;
+  companyProfile?: CompanyProfile;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -16,8 +17,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveModule,
   auth,
   setAuth,
-  onOpenAuthModal
+  onOpenAuthModal,
+  companyProfile
 }) => {
+  const displayName = companyProfile?.companyName?.trim() || APP_NAME;
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const navRef = useRef<HTMLDivElement>(null);
@@ -119,7 +122,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <div>
               <span className="text-xl font-extrabold tracking-wider bg-gradient-to-r from-teal-400 via-emerald-300 to-cyan-400 bg-clip-text text-transparent">
-                {APP_NAME}
+                {displayName}
               </span>
               <span className="block text-[9px] uppercase tracking-widest text-slate-400 font-semibold">
                 ERP System

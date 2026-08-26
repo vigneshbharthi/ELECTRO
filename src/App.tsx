@@ -99,6 +99,12 @@ export function App() {
 
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile>(() => dataService.getCompanyProfile());
 
+  // Keep document title in sync with Settings company name (so JBS Electro vs ELECTRO reflects per-deployment Settings)
+  useEffect(() => {
+    const name = companyProfile?.companyName?.trim() || ENV_APP_NAME;
+    document.title = `${name} - Electrician & Points Ledger Portal`;
+  }, [companyProfile?.companyName]);
+
   // Persist auth to localStorage on every change
   useEffect(() => {
     try {
@@ -351,6 +357,7 @@ export function App() {
         auth={auth}
         setAuth={setAuth}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        companyProfile={companyProfile}
       />
 
       {/* Main Content Body */}
