@@ -23,6 +23,12 @@ export function App() {
   const [activeModule, setActiveModule] = useState<string>('dashboard');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
 
+  // Dynamic tab title per deployment (VITE_APP_NAME)
+  useEffect(() => {
+    const name = (import.meta.env.VITE_APP_NAME as string) || 'JBS Electro';
+    document.title = `${name} - Electrician & Points Ledger Portal`;
+  }, []);
+
   // App Settings & Company Profile
   const getInitialSettings = (): AppSettings => {
     const defaults: AppSettings = { pointsPercent: 1, minBillAmount: 100, appName: 'JBS Electro' };
