@@ -18,9 +18,9 @@ export const OrderManProductView: React.FC<OrderManProductViewProps> = ({
   const availableGroups = Array.from(new Set(products.map(p => p.group_name)));
 
   const filteredProducts = products.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          p.group_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          p.uom.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (p.group_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (p.uom || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesGroup = selectedGroup === 'all' || p.group_name === selectedGroup;
     return matchesSearch && matchesGroup;
   });
@@ -109,7 +109,7 @@ export const OrderManProductView: React.FC<OrderManProductViewProps> = ({
                       {p.uom}
                     </td>
                     <td className="py-3.5 px-4 text-right font-mono font-extrabold text-emerald-400 text-sm">
-                      ₹{p.price.toFixed(2)}
+                      ₹{Number(p.price ?? 0).toFixed(2)}
                     </td>
                   </tr>
                 ))

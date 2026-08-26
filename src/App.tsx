@@ -29,6 +29,19 @@ export function App() {
     document.title = `${name} - Electrician & Points Ledger Portal`;
   }, []);
 
+  // User Auth State - Persisted in localStorage so login survives page refresh
+  const getInitialAuth = (): UserAuth => {
+    try {
+      const stored = localStorage.getItem('jbs_electro_auth');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.isAuthenticated) return parsed;
+      }
+    } catch {}
+    return { isAuthenticated: false, isDeveloperMode: false, userRole: 'guest', username: 'Guest' };
+  };
+  const [auth, setAuth] = useState<UserAuth>(getInitialAuth);
+
   // App Settings & Company Profile
   const getInitialSettings = (): AppSettings => {
     const defaults: AppSettings = { pointsPercent: 1, minBillAmount: 100, appName: 'JBS Electro' };
@@ -42,7 +55,7 @@ export function App() {
           : (typeof parsed.pointsPerRupee === 'number' && parsed.pointsPerRupee > 0)
             ? parsed.pointsPerRupee * 100  // 0.01 -> 1%
             : defaults.pointsPercent;
-        const minBillAmount = (typeof parsed.minBillAmount === 'number') ? parsed.minBillAmount : defaults.minBillAmount;
+        const minBillAmount = (typeof parsed.minBillAmount === 'number' && !Number.isNaN(parsed.minBillAmount) && parsed.minBillAmount >= 0) ? parsed.minBillAmount : defaults.minBillAmount;
         const appName = parsed.appName || defaults.appName;
         return { pointsPercent, minBillAmount, appName };
       }
@@ -60,7 +73,7 @@ export function App() {
     if (auth.userRole === 'admin' || auth.userRole === 'developer') {
       persistAppSettingsToSupabase();
     }
-  }, [settings]);
+  }, [settings, auth.userRole]);
 
   // Fetch global app_settings from Supabase (cross-device sync — overrides local defaults)
   const syncAppSettingsFromSupabase = async () => {
@@ -90,19 +103,6 @@ export function App() {
   }, []);
 
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile>(() => dataService.getCompanyProfile());
-
-  // User Auth State - Persisted in localStorage so login survives page refresh
-  const getInitialAuth = (): UserAuth => {
-    try {
-      const stored = localStorage.getItem('jbs_electro_auth');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed && parsed.isAuthenticated) return parsed;
-      }
-    } catch {}
-    return { isAuthenticated: false, isDeveloperMode: false, userRole: 'guest', username: 'Guest' };
-  };
-  const [auth, setAuth] = useState<UserAuth>(getInitialAuth);
 
   // Persist auth to localStorage on every change
   useEffect(() => {
@@ -163,7 +163,37 @@ export function App() {
   };
 
   useEffect(() => {
-    loadData();
+    let mounted = true;
+    const run = async () => {
+      setLoading(true);
+      try {
+        const [elecs, oms, prods, custs, txs, reds, clms, ords] = await Promise.all([
+          dataService.getElectricians(),
+          dataService.getOrderMen(),
+          dataService.getProducts(),
+          dataService.getCustomers(),
+          dataService.getTransactions(),
+          dataService.getRedemptions(),
+          dataService.getClaims(),
+          dataService.getOrders()
+        ]);
+        if (!mounted) return;
+        setElectricians(elecs);
+        setOrderMen(oms);
+        setProducts(prods);
+        setCustomers(custs);
+        setTransactions(txs);
+        setRedemptions(reds);
+        setClaims(clms);
+        setOrders(ords);
+      } catch (e) {
+        console.error('Data load error:', e);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    run();
+    return () => { mounted = false; };
   }, []);
 
   const handleSaveCompanyProfile = (profile: CompanyProfile) => {
@@ -173,13 +203,11 @@ export function App() {
 
   // ELECTRICIANS HANDLERS
   const handleAddElectrician = async (data: Omit<Electrician, 'id' | 'points_balance' | 'status' | 'created_at' | 'updated_at'>) => {
-    await dataService.addElectrician(data);
-    await loadData();
+    try { await dataService.addElectrician(data); await loadData(); } catch (e: any) { alert(e?.message || 'Failed to add electrician.'); }
   };
 
   const handleUpdateElectrician = async (id: string, updates: Partial<Electrician>) => {
-    await dataService.updateElectrician(id, updates);
-    await loadData();
+    try { await dataService.updateElectrician(id, updates); await loadData(); } catch (e: any) { alert(e?.message || 'Failed to update electrician.'); }
   };
 
   const handleGetElectricianRelatedCounts = (id: string) => ({
@@ -189,30 +217,25 @@ export function App() {
   });
 
   const handleDeleteElectrician = async (id: string, clearRecords?: boolean) => {
-    await dataService.deleteElectrician(id, clearRecords);
-    await loadData();
+    try { await dataService.deleteElectrician(id, clearRecords); await loadData(); } catch (e: any) { alert(e?.message || 'Failed to delete electrician.'); }
   };
 
   // ORDER MAN HANDLERS
   const handleAddOrderMan = async (data: Omit<OrderMan, 'id' | 'created_at' | 'updated_at'>) => {
-    await dataService.addOrderMan(data);
-    await loadData();
+    try { await dataService.addOrderMan(data); await loadData(); } catch (e: any) { alert(e?.message || 'Failed to add order man.'); }
   };
 
   const handleUpdateOrderMan = async (id: string, updates: Partial<OrderMan>) => {
-    await dataService.updateOrderMan(id, updates);
-    await loadData();
+    try { await dataService.updateOrderMan(id, updates); await loadData(); } catch (e: any) { alert(e?.message || 'Failed to update order man.'); }
   };
 
   const handleDeleteOrderMan = async (id: string) => {
-    await dataService.deleteOrderMan(id);
-    await loadData();
+    try { await dataService.deleteOrderMan(id); await loadData(); } catch (e: any) { alert(e?.message || 'Failed to delete order man.'); }
   };
 
   // ORDERS HANDLERS
   const handleAddOrder = async (order: Omit<Order, 'id' | 'order_no' | 'created_at' | 'updated_at'>) => {
-    await dataService.addOrder(order);
-    await loadData();
+    try { await dataService.addOrder(order); await loadData(); } catch (e: any) { alert(e?.message || 'Failed to add order.'); throw e; }
   };
 
   const handleUpdateOrder = async (id: string, updates: Partial<Order>) => {
@@ -234,62 +257,50 @@ export function App() {
   };
 
   const handleDeleteOrder = async (id: string) => {
-    await dataService.deleteOrder(id);
-    await loadData();
+    try { await dataService.deleteOrder(id); await loadData(); } catch (e: any) { alert(e?.message || 'Failed to delete order.'); }
   };
 
   // PRODUCTS HANDLERS
   const handleAddProduct = async (data: Omit<Product, 'id' | 'updated_at' | 'created_at'>) => {
-    await dataService.addProduct(data);
-    await loadData();
+    try { await dataService.addProduct(data); await loadData(); } catch (e: any) { alert(e?.message || 'Failed to add product.'); }
   };
 
   const handleBulkAddProducts = async (productsList: Omit<Product, 'id' | 'updated_at' | 'created_at'>[]) => {
-    await dataService.addBulkProducts(productsList);
-    await loadData();
+    try { await dataService.addBulkProducts(productsList); await loadData(); } catch (e: any) { alert(e?.message || 'Failed to import products.'); }
   };
 
   const handleUpdateProduct = async (id: string, updates: Partial<Product>) => {
-    await dataService.updateProduct(id, updates);
-    await loadData();
+    try { await dataService.updateProduct(id, updates); await loadData(); } catch (e: any) { alert(e?.message || 'Failed to update product.'); }
   };
 
   const handleDeleteProduct = async (id: string) => {
-    await dataService.deleteProduct(id);
-    await loadData();
+    try { await dataService.deleteProduct(id); await loadData(); } catch (e: any) { alert(e?.message || 'Failed to delete product.'); }
   };
 
   const handleBulkDeleteProducts = async (ids: string[]) => {
-    await dataService.deleteProducts(ids);
-    await loadData();
+    try { await dataService.deleteProducts(ids); await loadData(); } catch (e: any) { alert(e?.message || 'Failed to delete products.'); }
   };
 
   // CUSTOMERS HANDLERS
   const handleAddCustomer = async (data: Omit<Customer, 'id' | 'created_at' | 'updated_at'>): Promise<Customer> => {
-    const created = await dataService.addCustomer(data);
-    await loadData();
-    return created;
+    try { const created = await dataService.addCustomer(data); await loadData(); return created; } catch (e: any) { alert(e?.message || 'Failed to add customer.'); throw e; }
   };
 
   const handleUpdateCustomer = async (id: string, updates: Partial<Customer>) => {
-    await dataService.updateCustomer(id, updates);
-    await loadData();
+    try { await dataService.updateCustomer(id, updates); await loadData(); } catch (e: any) { alert(e?.message || 'Failed to update customer.'); }
   };
 
   const handleDeleteCustomer = async (id: string) => {
-    await dataService.deleteCustomer(id);
-    await loadData();
+    try { await dataService.deleteCustomer(id); await loadData(); } catch (e: any) { alert(e?.message || 'Failed to delete customer.'); }
   };
 
   // TRANSACTIONS & CLAIMS HANDLERS
   const handleAddTransaction = async (tx: Omit<PointTransaction, 'id' | 'created_at'>) => {
-    await dataService.addTransaction(tx);
-    await loadData();
+    try { await dataService.addTransaction(tx); await loadData(); } catch (e: any) { alert(e?.message || 'Failed to add transaction.'); }
   };
 
   const handleRequestRedemption = async (redemption: Omit<Redemption, 'id' | 'status' | 'requested_date'>) => {
-    await dataService.requestRedemption(redemption);
-    await loadData();
+    try { await dataService.requestRedemption(redemption); await loadData(); } catch (e: any) { alert(e?.message || 'Failed to request redemption.'); }
   };
 
   const handleUpdateRedemptionStatus = async (id: string, status: 'approved' | 'rejected', remarks?: string) => {
@@ -311,8 +322,7 @@ export function App() {
   };
 
   const handleSubmitClaim = async (claim: Omit<ElectricianClaim, 'id' | 'status' | 'submitted_date'>) => {
-    await dataService.submitClaim(claim);
-    await loadData();
+    try { await dataService.submitClaim(claim); await loadData(); } catch (e: any) { alert(e?.message || 'Failed to submit claim.'); throw e; }
   };
 
   const handleUpdateClaim = async (id: string, updates: Partial<ElectricianClaim>) => {
@@ -325,8 +335,7 @@ export function App() {
   };
 
   const handleDeleteClaim = async (id: string) => {
-    await dataService.deleteClaim(id);
-    await loadData();
+    try { await dataService.deleteClaim(id); await loadData(); } catch (e: any) { alert(e?.message || 'Failed to delete claim.'); }
   };
 
   const handleViewLedgerForElectrician = (electricianId: string) => {
@@ -334,9 +343,9 @@ export function App() {
     setActiveModule('ledger_report');
   };
 
-  // Find active profile for role-based view (no silent fallback to first record)
-  const currentElectrician = electricians.find(e => e.id === auth.userId || e.mobile === auth.userMobile);
-  const currentOrderMan = orderMen.find(o => o.id === auth.userId || o.mobile === auth.userMobile);
+  // Find active profile for role-based view — id match takes priority, mobile as fallback
+  const currentElectrician = electricians.find(e => e.id === auth.userId) || electricians.find(e => e.mobile === auth.userMobile);
+  const currentOrderMan = orderMen.find(o => o.id === auth.userId) || orderMen.find(o => o.mobile === auth.userMobile);
 
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans">
@@ -390,7 +399,14 @@ export function App() {
             ) : auth.userRole === 'orderman' ? (
               currentOrderMan ? (
                 <>
-                  {(activeModule === 'order_catalog') ? (
+                  {activeModule === 'dashboard' ? (
+                    <Dashboard
+                      electricians={[]}
+                      products={products}
+                      transactions={[]}
+                      onNavigate={setActiveModule}
+                    />
+                  ) : activeModule === 'order_catalog' ? (
                     <OrderManProductView
                       orderMan={currentOrderMan}
                       products={products}

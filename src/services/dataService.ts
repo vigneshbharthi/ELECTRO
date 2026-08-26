@@ -29,6 +29,11 @@ const setLocal = <T>(key: string, value: T): void => {
   }
 };
 
+const genId = (prefix = ''): string => {
+  const uuid = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  return prefix ? `${prefix}-${uuid}` : uuid;
+};
+
 // ELECTRICIAN CRUD SERVICES
 export const dataService = {
   // ELECTRICIANS
@@ -899,8 +904,8 @@ export const dataService = {
   async addOrder(order: Omit<Order, 'id' | 'order_no' | 'created_at' | 'updated_at'>): Promise<Order> {
     const newOrder: Order = {
       ...order,
-      id: crypto.randomUUID ? crypto.randomUUID() : `ord-${crypto.randomUUID ? crypto.randomUUID() : Date.now()}`,
-      order_no: `ORD-${Date.now()}-${(crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36)).slice(0, 6)}`,
+      id: genId('ord'),
+      order_no: `ORD-${Date.now()}-${genId().slice(0, 6)}`,
       status: order.status || 'pending',
       total_amount: order.total_amount || 0,
       created_at: new Date().toISOString(),

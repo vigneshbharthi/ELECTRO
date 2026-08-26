@@ -70,7 +70,7 @@ export const CustomerCrud: React.FC<CustomerCrudProps> = ({
   };
 
   const filteredCustomers = customers.filter(c =>
-    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (c.mobile || '').includes(searchTerm) ||
     (c.city || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (c.email || '').toLowerCase().includes(searchTerm.toLowerCase())

@@ -34,12 +34,19 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const startRecording = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      alert('Voice recording not supported in this browser or requires HTTPS.');
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const recorder = new MediaRecorder(stream);
       chunksRef.current = [];
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
@@ -48,7 +55,8 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
         const reader = new FileReader();
         reader.onload = () => setVoiceNoteUrl(reader.result as string);
         reader.readAsDataURL(blob);
-        stream.getTracks().forEach(t => t.stop());
+        streamRef.current?.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
       };
       mediaRecorderRef.current = recorder;
       recorder.start();
@@ -65,8 +73,19 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
     }
   };
 
+  // Cleanup mic on unmount
+  React.useEffect(() => {
+    return () => {
+      streamRef.current?.getTracks().forEach(t => t.stop());
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        try { mediaRecorderRef.current.stop(); } catch {}
+      }
+    };
+  }, []);
+
   const addItemRow = () => {
-    setItems([...items, { id: `line-${crypto.randomUUID ? crypto.randomUUID() : Date.now() + Math.random()}`, product_id: '', product_name: '', uom: '', qty: 1, rate: 0, amount: 0 }]);
+    const uid = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `line-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    setItems([...items, { id: uid, product_id: '', product_name: '', uom: '', qty: 1, rate: 0, amount: 0 }]);
   };
   const updateItemRow = (idx: number, field: string, value: any) => {
     const updated = [...items];
@@ -93,19 +112,20 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
   const totalAmount = items.reduce((sum, it) => sum + (it.amount || 0), 0);
 
   const handleSaveOrder = async () => {
+    if (isSavingOrder) return;
+    setIsSavingOrder(true);
+    try {
     let finalName = customerName.trim();
     let finalId = customerId;
     let finalMobile = customerMobile;
 
     if (!finalName && customerSearch.trim()) {
-      // User typed a name without picking from the dropdown - treat as a new customer
       finalName = customerSearch.trim();
-      const existing = customers.find(c => (c.name || '').toLowerCase() === finalName.toLowerCase());
+      const existing = customers.find(c => (c.name || '').toLowerCase().trim() === finalName.toLowerCase().trim());
       if (existing) {
         finalId = existing.id;
         finalMobile = existing.mobile || '';
       } else {
-        // Auto-create the customer in the master so it stays in sync
         const created = await onAddCustomer({ name: finalName });
         finalId = created.id;
         finalMobile = created.mobile || '';
@@ -163,6 +183,11 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
     setItems([]);
     setRemarks('');
     setVoiceNoteUrl('');
+    } catch (e: any) {
+      alert(e?.message || 'Failed to save order. Please try again.');
+    } finally {
+      setIsSavingOrder(false);
+    }
   };
 
   const openEdit = (order: Order) => {
@@ -253,8 +278,8 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
                 <div className="bg-slate-950/50 rounded-xl p-3 text-xs border border-slate-800/60">
                   <table className="w-full text-left">
                     <tbody>
-                      {order.items.map((it, i) => (
-                        <tr key={i} className="border-b border-slate-800/40 last:border-0">
+                      {order.items.map((it) => (
+                        <tr key={it.id || it.product_id} className="border-b border-slate-800/40 last:border-0">
                           <td className="py-1 text-slate-300">{it.product_name}</td>
                           <td className="py-1 text-right text-slate-400">{it.qty} x {it.uom}</td>
                         </tr>
@@ -481,7 +506,7 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
 
               <div className="flex justify-end gap-2">
                 <button onClick={() => { setShowModal(false); setEditingId(null); }} className="px-4 py-2 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800" type="button">Cancel</button>
-                <button onClick={handleSaveOrder} className="px-4 py-2 rounded-xl text-xs font-extrabold text-white bg-violet-600 hover:bg-violet-500" type="button">Save Order</button>
+                <button onClick={handleSaveOrder} disabled={isSavingOrder} className="px-4 py-2 rounded-xl text-xs font-extrabold text-white bg-violet-600 hover:bg-violet-500 disabled:opacity-50" type="button">{isSavingOrder ? 'Saving...' : 'Save Order'}</button>
               </div>
             </div>
           </div>
@@ -516,8 +541,8 @@ export const OrderBookModule: React.FC<OrderBookModuleProps> = ({
                     </tr>
                   </thead>
                   <tbody>
-                    {viewOrder.items.map((it, i) => (
-                      <tr key={i} className="border-t border-slate-800/40">
+                    {viewOrder.items.map((it) => (
+                      <tr key={it.id || it.product_id} className="border-t border-slate-800/40">
                         <td className="px-2 py-1 text-slate-200">{it.product_name}</td>
                         <td className="px-2 py-1 text-right text-slate-300">{it.qty} x {it.uom}</td>
                       </tr>

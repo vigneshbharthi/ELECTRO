@@ -23,6 +23,10 @@ const AdminCredentialsManager: React.FC<{
   const [confirmPassword, setConfirmPassword] = useState('');
   const [savedAt, setSavedAt] = useState<number | null>(null);
 
+  React.useEffect(() => {
+    setForm({ adminUsername: companyProfile.adminUsername, adminPassword: companyProfile.adminPassword });
+  }, [companyProfile.adminUsername, companyProfile.adminPassword]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.adminUsername.trim() || !form.adminPassword.trim()) {
@@ -201,6 +205,13 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
+
+  // Keep draft in sync when settings sync from Supabase
+  React.useEffect(() => {
+    if (Number.isFinite(settings.pointsPercent) && settings.pointsPercent > 0) {
+      setPercentDraft(settings.pointsPercent);
+    }
+  }, [settings.pointsPercent]);
 
   const handleSave = () => {
     if (!Number.isFinite(percentDraft) || percentDraft <= 0 || percentDraft > 100) {

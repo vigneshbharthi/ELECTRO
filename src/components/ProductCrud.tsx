@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Package, Plus, Search, Edit2, Trash2, Tag, Calendar, X, Check, Filter, Upload, Download, FileSpreadsheet, Trash } from 'lucide-react';
+import { Package, Plus, Search, Edit2, Trash2, Tag, Calendar, X, Check, Filter, Upload, Download, FileSpreadsheet } from 'lucide-react';
 import { Product } from '../types';
 
 interface ProductCrudProps {
@@ -95,18 +95,38 @@ export const ProductCrud: React.FC<ProductCrudProps> = ({
   const parseCsvData = (text: string) => {
     setCsvRawText(text);
     const lines = text.split(/\r\n|\n/).filter(line => line.trim() !== '');
-    if (lines.length <= 1) return;
+    if (lines.length <= 1) { setImportedPreview([]); return; }
 
-    // Header row skip, parse rows
+    // Header row skip, parse rows — handle quoted commas properly
+    const parseLine = (line: string): string[] => {
+      const out: string[] = [];
+      let cur = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; }
+          else inQuotes = !inQuotes;
+        } else if (ch === ',' && !inQuotes) {
+          out.push(cur.trim());
+          cur = '';
+        } else cur += ch;
+      }
+      out.push(cur.trim());
+      return out.map(s => s.replace(/^"|"$/g, '').trim());
+    };
+
     const parsed: Omit<Product, 'id' | 'updated_at' | 'created_at'>[] = [];
     for (let i = 1; i < lines.length; i++) {
-      const parts = lines[i].split(',').map(p => p.trim().replace(/^"|"$/g, ''));
-      if (parts.length >= 4) {
+      const parts = parseLine(lines[i]);
+      if (parts.length >= 4 && parts[0]) {
+        const price = parseFloat(parts[3]);
+        if (Number.isNaN(price) || price < 0) continue;
         parsed.push({
           name: parts[0],
           group_name: parts[1] || 'General',
           uom: parts[2] || 'Nos',
-          price: parseFloat(parts[3]) || 0
+          price
         });
       }
     }
@@ -118,11 +138,16 @@ export const ProductCrud: React.FC<ProductCrudProps> = ({
       alert('No valid products parsed from CSV!');
       return;
     }
-    await onBulkAdd(importedPreview);
-    setIsCsvModalOpen(false);
-    setImportedPreview([]);
-    setCsvRawText('');
-    alert(`Successfully imported ${importedPreview.length} products from CSV!`);
+    const count = importedPreview.length;
+    try {
+      await onBulkAdd(importedPreview);
+      setIsCsvModalOpen(false);
+      setImportedPreview([]);
+      setCsvRawText('');
+      alert(`Successfully imported ${count} products from CSV!`);
+    } catch (e: any) {
+      alert(e?.message || 'CSV import failed. Please try again.');
+    }
   };
 
   const downloadSampleCsv = () => {
@@ -132,12 +157,14 @@ export const ProductCrud: React.FC<ProductCrudProps> = ({
     const a = document.createElement('a');
     a.href = url;
     a.download = 'JBS_Electro_Product_Import_Sample.csv';
+    document.body.appendChild(a);
     a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const handleDeleteConfirm = async (id: string) => {
-    await onDelete(id);
-    setIsDeletingId(null);
+    try { await onDelete(id); } catch (e: any) { alert(e?.message || 'Delete failed.'); } finally { setIsDeletingId(null); }
   };
 
   const toggleSelect = (id: string) => {
@@ -156,8 +183,9 @@ export const ProductCrud: React.FC<ProductCrudProps> = ({
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
     if (confirm(`Delete ${selectedIds.length} selected product(s)? This cannot be undone.`)) {
-      await onBulkDelete(selectedIds);
+      try { await onBulkDelete(selectedIds); } catch (e: any) { alert(e?.message || 'Bulk delete failed.'); return; }
       setSelectedIds([]);
+      setIsDeletingId(null);
     }
   };
 
@@ -298,7 +326,7 @@ export const ProductCrud: React.FC<ProductCrudProps> = ({
                       {product.uom}
                     </td>
                     <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">
-                      ₹{product.price.toFixed(2)}
+                      ₹{Number(product.price ?? 0).toFixed(2)}
                     </td>
                     <td className="py-3.5 px-4 text-slate-400 text-[11px]">
                       {new Date(product.updated_at).toLocaleDateString('en-IN', {

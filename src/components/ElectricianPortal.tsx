@@ -22,7 +22,7 @@ export const ElectricianPortal: React.FC<ElectricianPortalProps> = ({
   onDeleteClaim
 }) => {
   // Normalize points percent so a malformed/legacy settings blob can never yield NaN points
-  const pointsPercent = (settings.pointsPercent && !Number.isNaN(settings.pointsPercent)) ? settings.pointsPercent : 1;
+  const pointsPercent = (typeof settings.pointsPercent === 'number' && !Number.isNaN(settings.pointsPercent) && settings.pointsPercent > 0) ? settings.pointsPercent : 1;
 
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [editingClaim, setEditingClaim] = useState<ElectricianClaim | null>(null);
@@ -83,6 +83,12 @@ export const ElectricianPortal: React.FC<ElectricianPortalProps> = ({
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean = false) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // 5MB limit to avoid quota issues
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image too large. Please choose an image under 5MB.');
+      e.target.value = '';
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (evt) => {
@@ -94,7 +100,10 @@ export const ElectricianPortal: React.FC<ElectricianPortalProps> = ({
         }
       }
     };
+    reader.onerror = () => alert('Failed to read image. Please try again.');
     reader.readAsDataURL(file);
+    // reset input so same file can be selected again
+    e.target.value = '';
   };
 
   const handleClaimSubmit = async (e: React.FormEvent) => {
@@ -108,25 +117,30 @@ export const ElectricianPortal: React.FC<ElectricianPortalProps> = ({
     setIsSubmitting(true);
     const claimedPts = Math.floor(numericAmount * (pointsPercent / 100));
 
-    await onSubmitClaim({
-      electrician_id: electrician.id,
-      electrician_name: electrician.name,
-      electrician_mobile: electrician.mobile,
-      bill_no: billNo,
-      bill_amount: numericAmount,
-      claimed_points: claimedPts,
-      invoice_image_url: invoiceImagePreview,
-      remarks
-    });
-
-    setIsSubmitting(false);
-    setIsSubmitModalOpen(false);
-    alert('Your bill claim has been submitted for Admin approval!');
+    try {
+      await onSubmitClaim({
+        electrician_id: electrician.id,
+        electrician_name: electrician.name,
+        electrician_mobile: electrician.mobile,
+        bill_no: billNo,
+        bill_amount: numericAmount,
+        claimed_points: claimedPts,
+        invoice_image_url: invoiceImagePreview,
+        remarks
+      });
+      setIsSubmitModalOpen(false);
+      alert('Your bill claim has been submitted for Admin approval!');
+    } catch (err: any) {
+      alert(err?.message || 'Failed to submit claim. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClaimUpdateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingClaim || !onUpdateClaim) return;
+    if (isSubmitting) return;
 
     const numericAmount = Number(editBillAmount);
     if (!editBillNo || !numericAmount || numericAmount <= 0) {
@@ -134,18 +148,24 @@ export const ElectricianPortal: React.FC<ElectricianPortalProps> = ({
       return;
     }
 
+    setIsSubmitting(true);
     const claimedPts = Math.floor(numericAmount * (pointsPercent / 100));
 
-    await onUpdateClaim(editingClaim.id, {
-      bill_no: editBillNo,
-      bill_amount: numericAmount,
-      claimed_points: claimedPts,
-      remarks: editRemarks,
-      invoice_image_url: editInvoiceImage
-    });
-
-    setEditingClaim(null);
-    alert('Your pending claim has been updated successfully!');
+    try {
+      await onUpdateClaim(editingClaim.id, {
+        bill_no: editBillNo,
+        bill_amount: numericAmount,
+        claimed_points: claimedPts,
+        remarks: editRemarks,
+        invoice_image_url: editInvoiceImage
+      });
+      setEditingClaim(null);
+      alert('Your pending claim has been updated successfully!');
+    } catch (err: any) {
+      alert(err?.message || 'Failed to update claim. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDeleteClaimConfirm = async (id: string) => {
@@ -572,9 +592,10 @@ export const ElectricianPortal: React.FC<ElectricianPortalProps> = ({
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-extrabold text-xs shadow-lg shadow-teal-500/20 hover:brightness-110 transition-all"
+                disabled={isSubmitting}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-extrabold text-xs shadow-lg shadow-teal-500/20 hover:brightness-110 transition-all disabled:opacity-50"
               >
-                Update Pending Claim
+                {isSubmitting ? 'Updating...' : 'Update Pending Claim'}
               </button>
             </form>
           </div>
