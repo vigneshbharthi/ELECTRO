@@ -209,7 +209,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center mx-auto mb-3 text-slate-950 shadow-lg shadow-teal-500/20">
             <Zap className="w-7 h-7 stroke-[2.5]" />
           </div>
-          <h2 className="text-xl font-extrabold text-slate-100">{APP_NAME} Portal Login</h2>
+          <h2 className="text-xl font-extrabold text-slate-100">{companyProfile?.companyName?.trim() || APP_NAME} Portal Login</h2>
           <p className="text-xs text-slate-400 mt-1">
             Enter your Mobile Number or Login ID & Password to sign in.
           </p>

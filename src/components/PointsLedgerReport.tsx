@@ -1,19 +1,23 @@
 import React, { useState } from 'react';
 import { FileSpreadsheet, Printer, Download, Filter, Search, UserCheck, Calendar, ArrowUpRight, ArrowDownLeft, Wallet } from 'lucide-react';
 import { APP_NAME, APP_NAME_SLUG } from '../lib/appConfig';
-import { Electrician, PointTransaction } from '../types';
+import { CompanyProfile, Electrician, PointTransaction } from '../types';
 
 interface PointsLedgerReportProps {
   electricians: Electrician[];
   transactions: PointTransaction[];
   selectedElectricianId?: string;
+  companyProfile?: CompanyProfile;
 }
 
 export const PointsLedgerReport: React.FC<PointsLedgerReportProps> = ({
   electricians,
   transactions,
-  selectedElectricianId: initialElectricianId
+  selectedElectricianId: initialElectricianId,
+  companyProfile
 }) => {
+  const displayName = companyProfile?.companyName?.trim() || APP_NAME;
+  const displaySlug = (displayName || APP_NAME).replace(/\s+/g, '_');
   const [selectedElectricianId, setSelectedElectricianId] = useState<string>(initialElectricianId || 'all');
   const [searchTerm, setSearchTerm] = useState('');
   const [datePreset, setDatePreset] = useState<'all' | 'today' | 'thisWeek' | 'thisMonth' | 'custom'>('all');
@@ -99,7 +103,7 @@ export const PointsLedgerReport: React.FC<PointsLedgerReportProps> = ({
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `${APP_NAME_SLUG}_Points_Ledger_${selectedElectricianId}_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `${displaySlug}_Points_Ledger_${selectedElectricianId}_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -255,7 +259,7 @@ export const PointsLedgerReport: React.FC<PointsLedgerReportProps> = ({
 
       {/* Printable Statement Title */}
       <div className="hidden print-only mb-4">
-        <h1 className="text-2xl font-bold">{APP_NAME} - Points Statement Ledger</h1>
+        <h1 className="text-2xl font-bold">{displayName} - Points Statement Ledger</h1>
         {currentElectrician && (
           <p className="text-sm">
             Electrician: {currentElectrician.name} | Mobile: {currentElectrician.mobile} | Address: {currentElectrician.address} ({currentElectrician.pincode})

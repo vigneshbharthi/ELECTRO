@@ -407,6 +407,7 @@ export function App() {
                       products={products}
                       transactions={[]}
                       onNavigate={setActiveModule}
+                      companyProfile={companyProfile}
                     />
                   ) : activeModule === 'order_catalog' ? (
                     <OrderManProductView
@@ -442,6 +443,7 @@ export function App() {
                     products={products}
                     transactions={transactions}
                     onNavigate={setActiveModule}
+                    companyProfile={companyProfile}
                   />
                 )}
 
@@ -523,6 +525,7 @@ export function App() {
                     electricians={electricians}
                     transactions={transactions}
                     selectedElectricianId={selectedLedgerElectricianId}
+                    companyProfile={companyProfile}
                   />
                 )}
 

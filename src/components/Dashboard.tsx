@@ -1,21 +1,24 @@
 import React from 'react';
 import { Users, Package, Award, FileSpreadsheet, ArrowUpRight, TrendingUp, Zap, ShieldCheck, UserCheck, Plus } from 'lucide-react';
 import { APP_NAME } from '../lib/appConfig';
-import { Electrician, Product, PointTransaction } from '../types';
+import { Electrician, Product, PointTransaction, CompanyProfile } from '../types';
 
 interface DashboardProps {
   electricians: Electrician[];
   products: Product[];
   transactions: PointTransaction[];
   onNavigate: (tab: string) => void;
+  companyProfile?: CompanyProfile;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
   electricians,
   products,
   transactions,
-  onNavigate
+  onNavigate,
+  companyProfile
 }) => {
+  const displayName = companyProfile?.companyName?.trim() || APP_NAME;
   const totalElectricians = electricians.length;
   const totalProducts = products.length;
 
@@ -35,7 +38,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="relative z-10 max-w-2xl">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-500/20 border border-teal-500/40 text-teal-300 text-xs font-bold mb-3">
             <Zap className="w-3.5 h-3.5" />
-            <span>Welcome to {APP_NAME} System</span>
+            <span>Welcome to {displayName} System</span>
           </div>
 
           <h1 className="text-2xl md:text-3xl font-extrabold text-slate-100 tracking-tight">
