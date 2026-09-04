@@ -133,6 +133,40 @@ export function App() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedLedgerElectricianId, setSelectedLedgerElectricianId] = useState<string>('all');
   const [loading, setLoading] = useState<boolean>(true);
+  // Online-first sync state: pending outbox ops + connectivity
+  const [outboxPending, setOutboxPending] = useState<number>(0);
+  const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+  // Push everything pending online, then reload. Never leaves data local-only.
+  const handleFlushAndReload = async () => {
+    try {
+      dataService.normalizeLocalIds();
+      await dataService.flushOutbox();
+    } catch (e) {
+      console.warn('Background sync skipped:', e);
+    }
+    try { setOutboxPending(dataService.getOutboxSummary().pending); } catch {}
+    await loadData();
+  };
+
+  // Auto-retry: on reconnect + every 60s while anything is pending
+  useEffect(() => {
+    const onOnline = () => { setIsOnline(true); handleFlushAndReload(); };
+    const onOffline = () => setIsOnline(false);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    const timer = setInterval(() => {
+      try {
+        if (dataService.getOutboxSummary().pending > 0) handleFlushAndReload();
+        else setOutboxPending(0);
+      } catch {}
+    }, 60000);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+      clearInterval(timer);
+    };
+  }, []);
 
   // Fetch initial data
   const loadData = async () => {
@@ -156,6 +190,7 @@ export function App() {
       setRedemptions(reds);
       setClaims(clms);
       setOrders(ords);
+      try { setOutboxPending(dataService.getOutboxSummary().pending); } catch {}
     } catch (e) {
       console.error('Data load error:', e);
     } finally {
@@ -168,6 +203,13 @@ export function App() {
     const run = async () => {
       setLoading(true);
       try {
+        // Startup: fix stranded ids, then push everything pending online BEFORE first paint of data
+        try {
+          dataService.normalizeLocalIds();
+          await dataService.flushOutbox();
+        } catch (e) {
+          console.warn('Startup sync skipped:', e);
+        }
         const [elecs, oms, prods, custs, txs, reds, clms, ords] = await Promise.all([
           dataService.getElectricians(),
           dataService.getOrderMen(),
@@ -187,6 +229,7 @@ export function App() {
         setRedemptions(reds);
         setClaims(clms);
         setOrders(ords);
+        try { setOutboxPending(dataService.getOutboxSummary().pending); } catch {}
       } catch (e) {
         console.error('Data load error:', e);
       } finally {
@@ -359,6 +402,19 @@ export function App() {
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         companyProfile={companyProfile}
       />
+
+      {/* Online-sync status: nothing stays local-only */}
+      {auth.isAuthenticated && (!isOnline || outboxPending > 0) && (
+        <div className={`px-4 py-2 text-center text-[11px] font-extrabold no-print ${!isOnline ? 'bg-rose-500/15 text-rose-300 border-b border-rose-500/30' : 'bg-amber-500/15 text-amber-300 border-b border-amber-500/30'}`}>
+          {!isOnline ? (
+            <>Offline — changes are queued on this device and will go online automatically on reconnect.</>
+          ) : (
+            <button onClick={handleFlushAndReload} className="hover:underline" title="Sync now">
+              Sync pending ({outboxPending}) — retrying automatically. Tap to sync now.
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Main Content Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -556,6 +612,7 @@ export function App() {
                     setAuth={setAuth}
                     companyProfile={companyProfile}
                     onSaveCompanyProfile={handleSaveCompanyProfile}
+                    onReloadData={loadData}
                   />
                 )}
               </>

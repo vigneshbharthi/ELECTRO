@@ -11,6 +11,7 @@ interface SettingsModuleProps {
   setAuth: React.Dispatch<React.SetStateAction<UserAuth>>;
   companyProfile: CompanyProfile;
   onSaveCompanyProfile: (profile: CompanyProfile) => void;
+  onReloadData?: () => Promise<void>;
 }
 
 const AdminCredentialsManager: React.FC<{
@@ -198,7 +199,8 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
   auth,
   setAuth,
   companyProfile,
-  onSaveCompanyProfile
+  onSaveCompanyProfile,
+  onReloadData
 }) => {
   const [percentDraft, setPercentDraft] = useState<number>(
     Number.isFinite(settings.pointsPercent) && settings.pointsPercent > 0 ? settings.pointsPercent : 1
@@ -233,11 +235,18 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
     setSyncing(true);
     setSyncResult(null);
     try {
+      // Online-first: fix stranded ids, flush the auto-retry queue, then full push
+      const normalized = dataService.normalizeLocalIds();
+      const flushed = await dataService.flushOutbox();
       const r = await dataService.syncLocalToCloud();
+      if (onReloadData) await onReloadData();
       const pushed = r.electricians + r.orderMen + r.products + r.customers + r.claims + r.transactions + r.redemptions + r.orders;
-      if (pushed === 0) {
-        setSyncResult('No new local records to sync — everything is already in cloud.');
-      } else {
+      const parts: string[] = [];
+      if (normalized.fixed > 0) parts.push(`Fixed ${normalized.fixed} stranded record id(s) so they can save online.`);
+      if (flushed.done > 0) parts.push(`Auto-queue synced ${flushed.done} record(s).`);
+      if (pushed === 0 && flushed.done === 0 && normalized.fixed === 0) {
+        parts.push('No new local records to sync — everything is already in cloud.');
+      } else if (pushed > 0) {
         let msg = `Synced ${pushed} record(s) to cloud:\n`;
         if (r.electricians) msg += `  • Electricians: ${r.electricians}\n`;
         if (r.orderMen) msg += `  • Order Men: ${r.orderMen}\n`;
@@ -247,10 +256,16 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
         if (r.transactions) msg += `  • Transactions: ${r.transactions}\n`;
         if (r.redemptions) msg += `  • Redemptions: ${r.redemptions}\n`;
         if (r.orders) msg += `  • Orders: ${r.orders}\n`;
-        setSyncResult(msg.trim());
+        parts.push(msg.trim());
       }
+      const outbox = dataService.getOutboxSummary();
+      if (outbox.pending > 0) parts.push(`Still pending online: ${outbox.pending}${outbox.lastError ? ` (last error: ${outbox.lastError})` : ''} — will keep retrying automatically.`);
+      setSyncResult(parts.join('\n'));
       if (r.errors.length > 0) {
         setSyncResult(prev => (prev ? prev + '\n' : '') + 'Errors: ' + r.errors.join('; '));
+      }
+      if (flushed.errors.length > 0) {
+        setSyncResult(prev => (prev ? prev + '\n' : '') + 'Queue errors: ' + flushed.errors.join('; '));
       }
     } catch (e: any) {
       setSyncResult('Sync failed: ' + (e?.message || 'unknown error'));
@@ -366,6 +381,9 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({
             </h3>
             <p className="text-xs text-slate-400">
               Pushes any records that exist only in this browser's local storage to Supabase. Needed if you created data before the cloud connection was fixed, so other devices can see it.
+              <span className="block mt-1 font-bold text-amber-300">
+                Waiting online: {(() => { try { return dataService.getOutboxSummary().pending; } catch { return 0; } })()} change(s) — the app retries these automatically on start, on reconnect, and every minute.
+              </span>
             </p>
             <div className="flex items-center justify-between flex-wrap gap-3">
               <button
